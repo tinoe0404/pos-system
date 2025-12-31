@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { buildApp } from './app';
 import { PrismaClient } from '@prisma/client';
 import redis from './shared/redis';
+import { salesWorker } from './shared/queue';
 
 const prisma = new PrismaClient();
 
@@ -11,7 +12,7 @@ async function start() {
     await prisma.$connect();
     console.log('✅ Database connected');
 
-    // Test Redis connection (already auto-connected, just verify)
+    // Test Redis connection
     await redis.ping();
 
     const app = await buildApp();
@@ -22,6 +23,7 @@ async function start() {
     await app.listen({ port, host });
     
     console.log(`🚀 Server running at http://${host}:${port}`);
+    console.log('🔄 Sales worker is processing jobs in the background');
   } catch (err) {
     console.error('❌ Server startup error:', err);
     process.exit(1);
@@ -29,18 +31,30 @@ async function start() {
 }
 
 // Graceful shutdown
-process.on('SIGINT', async () => {
+async function shutdown() {
   console.log('\n🛑 Shutting down gracefully...');
-  await prisma.$disconnect();
-  await redis.quit();
-  process.exit(0);
-});
+  
+  try {
+    // Close worker
+    await salesWorker.close();
+    console.log('✅ Worker closed');
 
-process.on('SIGTERM', async () => {
-  console.log('\n🛑 Shutting down gracefully...');
-  await prisma.$disconnect();
-  await redis.quit();
-  process.exit(0);
-});
+    // Close database
+    await prisma.$disconnect();
+    console.log('✅ Database disconnected');
+
+    // Close Redis
+    await redis.quit();
+    console.log('✅ Redis disconnected');
+
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error during shutdown:', error);
+    process.exit(1);
+  }
+}
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
 
 start();

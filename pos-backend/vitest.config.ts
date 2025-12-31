@@ -9,5 +9,12 @@ export default defineConfig({
       reporter: ['text', 'json', 'html'],
     },
     setupFiles: ['./src/test-setup.ts'],
+    pool: 'forks', // Run in separate processes
+    poolOptions: {
+      forks: {
+        singleFork: true, // Run tests sequentially to avoid queue conflicts
+      },
+    },
+    testTimeout: 30000, // Increase timeout for worker processing
   },
 });
