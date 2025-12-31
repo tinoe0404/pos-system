@@ -11,7 +11,8 @@
     "test:ui": "vitest --ui",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "redis:clear": "node scripts/clear-redis.js"
   },
   "keywords": [
     "pos",

@@ -9,6 +9,7 @@ import {
 } from 'fastify-type-provider-zod';
 import authRoutes from './modules/auth/auth.routes';
 import productRoutes from './modules/products/product.routes';
+import salesRoutes from './modules/sales/sales.routes';
 
 export async function buildApp() {
   const app = Fastify({
@@ -54,6 +55,7 @@ export async function buildApp() {
   // Register routes
   await app.register(authRoutes, { prefix: '/api/auth' });
   await app.register(productRoutes, { prefix: '/api/products' });
+  await app.register(salesRoutes, { prefix: '/api/sales' });
 
   return app;
 }
