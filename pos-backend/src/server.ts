@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { buildApp } from './app';
 import { PrismaClient } from '@prisma/client';
+import redis from './shared/redis';
 
 const prisma = new PrismaClient();
 
@@ -9,6 +10,9 @@ async function start() {
     // Test database connection
     await prisma.$connect();
     console.log('✅ Database connected');
+
+    // Test Redis connection (already auto-connected, just verify)
+    await redis.ping();
 
     const app = await buildApp();
     
@@ -28,12 +32,14 @@ async function start() {
 process.on('SIGINT', async () => {
   console.log('\n🛑 Shutting down gracefully...');
   await prisma.$disconnect();
+  await redis.quit();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
   console.log('\n🛑 Shutting down gracefully...');
   await prisma.$disconnect();
+  await redis.quit();
   process.exit(0);
 });
 
