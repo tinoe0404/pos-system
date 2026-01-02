@@ -4,7 +4,9 @@ import { z } from 'zod';
 import {
   createSaleSchema,
   saleResponseSchema,
+  saleDetailResponseSchema,
   salesListResponseSchema,
+  salesPaginationSchema,
 } from './sales.schema';
 import {
   createSaleHandler,
@@ -31,15 +33,14 @@ async function salesRoutes(app: FastifyInstance) {
     createSaleHandler
   );
 
-  // GET /api/sales - Get all sales (Protected: All authenticated users)
+  // GET /api/sales - Get all sales with pagination (Protected: All authenticated users)
+  // Cashiers see only their own sales, Admins see all
   server.get(
     '/',
     {
       onRequest: [authenticate],
       schema: {
-        querystring: z.object({
-          status: z.enum(['PENDING', 'COMPLETED', 'FAILED']).optional(),
-        }),
+        querystring: salesPaginationSchema,
         response: {
           200: salesListResponseSchema,
         },
@@ -48,7 +49,7 @@ async function salesRoutes(app: FastifyInstance) {
     getAllSalesHandler
   );
 
-  // GET /api/sales/:id - Get sale by ID (Protected: All authenticated users)
+  // GET /api/sales/:id - Get sale by ID with product details (Protected: All authenticated users)
   server.get(
     '/:id',
     {
@@ -58,7 +59,7 @@ async function salesRoutes(app: FastifyInstance) {
           id: z.string(),
         }),
         response: {
-          200: saleResponseSchema,
+          200: saleDetailResponseSchema,
         },
       },
     },

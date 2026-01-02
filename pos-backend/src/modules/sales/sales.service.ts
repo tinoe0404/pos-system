@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { salesQueue } from '../../shared/queue';
-import { CreateSaleInput } from './sales.schema';
+import { CreateSaleInput, SalesPaginationQuery } from './sales.schema';
 
 const prisma = new PrismaClient();
 
@@ -99,14 +99,25 @@ export class SalesService {
   }
 
   /**
-   * Get sale by ID
+   * Get sale by ID with product details
    */
   async getSaleById(saleId: string) {
     try {
       const sale = await prisma.sale.findUnique({
         where: { id: saleId },
         include: {
-          items: true,
+          items: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  sku: true,
+                  category: true,
+                },
+              },
+            },
+          },
           user: {
             select: {
               id: true,
@@ -127,6 +138,7 @@ export class SalesService {
         items: sale.items.map((item) => ({
           ...item,
           price_at_sale: item.price_at_sale.toString(),
+          product: item.product,
         })),
       };
     } catch (error) {
@@ -136,9 +148,12 @@ export class SalesService {
   }
 
   /**
-   * Get all sales with optional filters
+   * Get all sales with pagination and filters
    */
-  async getAllSales(filters?: { userId?: string; status?: string }) {
+  async getAllSales(
+    filters?: { userId?: string; status?: string },
+    pagination?: SalesPaginationQuery
+  ) {
     try {
       const where: any = {};
 
@@ -150,6 +165,10 @@ export class SalesService {
         where.status = filters.status;
       }
 
+      // Get total count for pagination
+      const total = await prisma.sale.count({ where });
+
+      // Get paginated sales
       const sales = await prisma.sale.findMany({
         where,
         include: {
@@ -165,6 +184,8 @@ export class SalesService {
         orderBy: {
           created_at: 'desc',
         },
+        skip: pagination?.skip || 0,
+        take: pagination?.take || 20,
       });
 
       return {
@@ -177,6 +198,13 @@ export class SalesService {
           })),
         })),
         count: sales.length,
+        pagination: pagination
+          ? {
+              skip: pagination.skip,
+              take: pagination.take,
+              total,
+            }
+          : undefined,
       };
     } catch (error) {
       console.error('Error fetching sales:', error);

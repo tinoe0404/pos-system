@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { salesService } from './sales.service';
-import { CreateSaleInput } from './sales.schema';
+import { CreateSaleInput, SalesPaginationQuery } from './sales.schema';
 
 export async function createSaleHandler(
   request: FastifyRequest,
@@ -38,7 +38,6 @@ export async function createSaleHandler(
   }
 }
 
-
 export async function getSaleByIdHandler(
   request: FastifyRequest,
   reply: FastifyReply
@@ -70,7 +69,7 @@ export async function getAllSalesHandler(
 ) {
   try {
     const user = request.user as { id: string; role: string };
-    const queryParams = request.query as { status?: string };
+    const queryParams = request.query as SalesPaginationQuery;
 
     // Cashiers can only see their own sales
     const filters: any = {};
@@ -83,7 +82,13 @@ export async function getAllSalesHandler(
       filters.status = queryParams.status;
     }
 
-    const result = await salesService.getAllSales(filters);
+    // Pass pagination params
+    const pagination = {
+      skip: queryParams.skip,
+      take: queryParams.take,
+    };
+
+    const result = await salesService.getAllSales(filters, pagination);
 
     return reply.code(200).send(result);
   } catch (error) {
