@@ -23,6 +23,7 @@ model User {
   username      String   @unique
   password_hash String
   role          UserRole @default(cashier)
+  is_active     Boolean  @default(true)  // ✅ NEW FIELD
   created_at    DateTime @default(now())
 
   sales Sale[]
