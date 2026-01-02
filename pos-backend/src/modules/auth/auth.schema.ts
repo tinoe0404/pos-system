@@ -14,6 +14,13 @@ export const userResponseSchema = z.object({
   created_at: z.date(),
 });
 
+// Simplified /me response (only id, username, role)
+export const meResponseSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+  role: z.enum(['admin', 'cashier']),
+});
+
 export const authResponseSchema = z.object({
   token: z.string(),
   user: userResponseSchema,
@@ -22,4 +29,5 @@ export const authResponseSchema = z.object({
 // TypeScript types
 export type LoginInput = z.infer<typeof loginSchema>;
 export type UserResponse = z.infer<typeof userResponseSchema>;
+export type MeResponse = z.infer<typeof meResponseSchema>;
 export type AuthResponse = z.infer<typeof authResponseSchema>;

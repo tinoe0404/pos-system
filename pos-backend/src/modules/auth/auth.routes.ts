@@ -3,7 +3,7 @@ import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
   loginSchema,
   authResponseSchema,
-  userResponseSchema,
+  meResponseSchema,
 } from './auth.schema';
 import { loginHandler, meHandler } from './auth.controller';
 import { authenticate } from './auth.middleware';
@@ -25,14 +25,14 @@ async function authRoutes(app: FastifyInstance) {
     loginHandler
   );
 
-  // GET /api/auth/me
+  // GET /api/auth/me - Returns only id, username, role
   server.get(
     '/me',
     {
       onRequest: [authenticate],
       schema: {
         response: {
-          200: userResponseSchema,
+          200: meResponseSchema,
         },
       },
     },

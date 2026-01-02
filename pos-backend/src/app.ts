@@ -10,6 +10,8 @@ import {
 import authRoutes from './modules/auth/auth.routes';
 import productRoutes from './modules/products/product.routes';
 import salesRoutes from './modules/sales/sales.routes';
+import userRoutes from './modules/users/user.routes';
+import inventoryRoutes from './modules/inventory/inventory.routes';
 
 export async function buildApp() {
   const app = Fastify({
@@ -56,6 +58,8 @@ export async function buildApp() {
   await app.register(authRoutes, { prefix: '/api/auth' });
   await app.register(productRoutes, { prefix: '/api/products' });
   await app.register(salesRoutes, { prefix: '/api/sales' });
+  await app.register(userRoutes, { prefix: '/api/users' });
+  await app.register(inventoryRoutes, { prefix: '/api/inventory' });
 
   return app;
 }

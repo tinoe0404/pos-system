@@ -25,6 +25,14 @@ export async function loginHandler(
       });
     }
 
+    // Check if user is active
+    if (!user.is_active) {
+      return reply.code(403).send({
+        error: 'Account deactivated',
+        message: 'Your account has been deactivated. Please contact an administrator.',
+      });
+    }
+
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
 
@@ -86,7 +94,12 @@ export async function meHandler(
       });
     }
 
-    return reply.code(200).send(userData);
+    // Return only id, username, role (as per requirements)
+    return reply.code(200).send({
+      id: userData.id,
+      username: userData.username,
+      role: userData.role,
+    });
   } catch (error) {
     request.log.error(error);
     return reply.code(500).send({
