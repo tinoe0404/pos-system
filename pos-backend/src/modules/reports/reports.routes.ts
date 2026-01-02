@@ -1,7 +1,17 @@
 import { FastifyInstance } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
-import { dailyReportQuerySchema } from './reports.schema';
-import { generateDailyPDFHandler } from './reports.controller';
+import {
+  dailyReportQuerySchema,
+  dailyJsonReportSchema,
+  weeklyJsonReportSchema,
+  monthlyJsonReportSchema,
+} from './reports.schema';
+import {
+  generateDailyPDFHandler,
+  getDailyJsonReportHandler,
+  getWeeklyJsonReportHandler,
+  getMonthlyJsonReportHandler,
+} from './reports.controller';
 import { authenticate, requireRole } from '../auth/auth.middleware';
 
 async function reportsRoutes(app: FastifyInstance) {
@@ -19,6 +29,55 @@ async function reportsRoutes(app: FastifyInstance) {
       },
     },
     generateDailyPDFHandler
+  );
+
+  // GET /api/reports/daily - Get daily JSON report (Admin only)
+  server.get(
+    '/daily',
+    {
+      onRequest: [authenticate, requireRole('admin')],
+      schema: {
+        querystring: dailyReportQuerySchema,
+        response: {
+          200: dailyJsonReportSchema,
+        },
+        description: 'Get daily sales statistics as JSON for charts',
+        tags: ['reports'],
+      },
+    },
+    getDailyJsonReportHandler
+  );
+
+  // GET /api/reports/weekly - Get weekly JSON report (Admin only)
+  server.get(
+    '/weekly',
+    {
+      onRequest: [authenticate, requireRole('admin')],
+      schema: {
+        response: {
+          200: weeklyJsonReportSchema,
+        },
+        description: 'Get last 7 days sales statistics as JSON for charts',
+        tags: ['reports'],
+      },
+    },
+    getWeeklyJsonReportHandler
+  );
+
+  // GET /api/reports/monthly - Get monthly JSON report (Admin only)
+  server.get(
+    '/monthly',
+    {
+      onRequest: [authenticate, requireRole('admin')],
+      schema: {
+        response: {
+          200: monthlyJsonReportSchema,
+        },
+        description: 'Get last 30 days sales statistics as JSON for charts',
+        tags: ['reports'],
+      },
+    },
+    getMonthlyJsonReportHandler
   );
 }
 

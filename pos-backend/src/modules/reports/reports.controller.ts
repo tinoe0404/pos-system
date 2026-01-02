@@ -26,7 +26,7 @@ export async function generateDailyPDFHandler(
 
     // Set headers for PDF download
     const filename = `daily-sales-report-${dateString || new Date().toISOString().split('T')[0]}.pdf`;
-    
+
     reply.header('Content-Type', 'application/pdf');
     reply.header('Content-Disposition', `attachment; filename="${filename}"`);
 
@@ -45,6 +45,92 @@ export async function generateDailyPDFHandler(
     return reply.code(500).send({
       error: 'Internal server error',
       message: 'Failed to generate PDF report',
+    });
+  }
+}
+
+export async function getDailyJsonReportHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  try {
+    const query = request.query as DailyReportQuery;
+    const dateString = query.date;
+
+    // Validate date format if provided
+    if (dateString) {
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(dateString)) {
+        return reply.code(400).send({
+          error: 'Bad request',
+          message: 'Invalid date format. Use YYYY-MM-DD',
+        });
+      }
+    }
+
+    const report = await reportsService.getDailyJsonReport(dateString);
+    return reply.code(200).send(report);
+  } catch (error: unknown) {
+    request.log.error(error);
+
+    if (error instanceof Error) {
+      return reply.code(500).send({
+        error: 'Internal server error',
+        message: error.message,
+      });
+    }
+
+    return reply.code(500).send({
+      error: 'Internal server error',
+      message: 'Failed to fetch daily report',
+    });
+  }
+}
+
+export async function getWeeklyJsonReportHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  try {
+    const report = await reportsService.getWeeklyJsonReport();
+    return reply.code(200).send(report);
+  } catch (error: unknown) {
+    request.log.error(error);
+
+    if (error instanceof Error) {
+      return reply.code(500).send({
+        error: 'Internal server error',
+        message: error.message,
+      });
+    }
+
+    return reply.code(500).send({
+      error: 'Internal server error',
+      message: 'Failed to fetch weekly report',
+    });
+  }
+}
+
+export async function getMonthlyJsonReportHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  try {
+    const report = await reportsService.getMonthlyJsonReport();
+    return reply.code(200).send(report);
+  } catch (error: unknown) {
+    request.log.error(error);
+
+    if (error instanceof Error) {
+      return reply.code(500).send({
+        error: 'Internal server error',
+        message: error.message,
+      });
+    }
+
+    return reply.code(500).send({
+      error: 'Internal server error',
+      message: 'Failed to fetch monthly report',
     });
   }
 }
