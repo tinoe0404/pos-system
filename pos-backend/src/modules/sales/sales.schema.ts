@@ -9,6 +9,7 @@ export const saleItemInputSchema = z.object({
 
 export const createSaleSchema = z.object({
   items: z.array(saleItemInputSchema).min(1, 'At least one item is required'),
+  paymentMethod: z.enum(['CASH', 'ECOCASH']).default('CASH'),
 });
 
 // Pagination query schema
@@ -53,6 +54,7 @@ export const saleResponseSchema = z.object({
   user_id: z.string(),
   total: z.string(), // Decimal as string
   status: z.enum(['PENDING', 'COMPLETED', 'FAILED']),
+  payment_method: z.enum(['CASH', 'ECOCASH']),
   created_at: z.union([z.date(), z.string()]),
   updated_at: z.union([z.date(), z.string()]),
   items: z.array(saleItemResponseSchema).optional(),

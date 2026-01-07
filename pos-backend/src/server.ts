@@ -16,12 +16,12 @@ async function start() {
     await redis.ping();
 
     const app = await buildApp();
-    
-    const port = parseInt(process.env.PORT || '3000', 10);
+
+    const port = parseInt(process.env.PORT || '4000', 10);
     const host = process.env.HOST || '0.0.0.0';
 
     await app.listen({ port, host });
-    
+
     console.log(`🚀 Server running at http://${host}:${port}`);
     console.log('🔄 Sales worker is processing jobs in the background');
   } catch (err) {
@@ -33,7 +33,7 @@ async function start() {
 // Graceful shutdown
 async function shutdown() {
   console.log('\n🛑 Shutting down gracefully...');
-  
+
   try {
     // Close worker
     await salesWorker.close();

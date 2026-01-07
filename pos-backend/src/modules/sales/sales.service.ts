@@ -41,6 +41,7 @@ export class SalesService {
             user_id: userId,
             total,
             status: 'PENDING',
+            payment_method: data.paymentMethod,
           },
         });
 
