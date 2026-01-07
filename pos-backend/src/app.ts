@@ -44,7 +44,16 @@ export async function buildApp() {
 
   // Register CORS - Allow all origins for development
   await app.register(cors, {
-    origin: process.env.CORS_ORIGIN || '*', // Use '*' for development, specify domains in production
+    origin: (origin, cb) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return cb(null, true);
+      // Allow localhost requests
+      if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
+        return cb(null, true);
+      }
+      // Error out others
+      cb(new Error("Not allowed by CORS"), false);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
