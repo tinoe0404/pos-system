@@ -19,11 +19,10 @@ import { authenticate, requireRole } from '../auth/auth.middleware';
 async function productRoutes(app: FastifyInstance) {
   const server = app.withTypeProvider<ZodTypeProvider>();
 
-  // GET /api/products - Get all products (Protected: All authenticated users)
+  // GET /api/products - Get all products (Public)
   server.get(
     '/',
     {
-      onRequest: [authenticate],
       schema: {
         response: {
           200: productsListResponseSchema,
@@ -33,11 +32,10 @@ async function productRoutes(app: FastifyInstance) {
     getAllProductsHandler
   );
 
-  // GET /api/products/:id - Get product by ID (Protected: All authenticated users)
+  // GET /api/products/:id - Get product by ID (Public)
   server.get(
     '/:id',
     {
-      onRequest: [authenticate],
       schema: {
         params: z.object({
           id: z.string(),

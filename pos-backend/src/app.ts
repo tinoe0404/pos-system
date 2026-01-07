@@ -2,6 +2,9 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import jwt from '@fastify/jwt';
+import fastifySwagger from '@fastify/swagger';
+import fastifySwaggerUi from '@fastify/swagger-ui';
+import { jsonSchemaTransform } from 'fastify-type-provider-zod';
 import {
   serializerCompiler,
   validatorCompiler,
@@ -54,11 +57,43 @@ export async function buildApp() {
   });
 
   // Register JWT
+  // Register JWT
   await app.register(jwt, {
     secret: process.env.JWT_SECRET || 'fallback-secret-change-this',
     sign: {
       expiresIn: '24h',
     },
+  });
+
+  // Register Swagger
+  await app.register(fastifySwagger, {
+    openapi: {
+      info: {
+        title: 'POS System API',
+        description: 'Antigravity POS Backend Documentation',
+        version: '1.0.0',
+      },
+      servers: [
+        {
+          url: 'http://localhost:3000',
+        },
+      ],
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'JWT',
+          },
+        },
+      },
+      security: [{ bearerAuth: [] }],
+    },
+    transform: jsonSchemaTransform,
+  });
+
+  await app.register(fastifySwaggerUi, {
+    routePrefix: '/documentation',
   });
 
   // Health check endpoint

@@ -60,21 +60,31 @@ export class SalesService {
       console.log(`📝 Sale ${sale.id} created with status PENDING`);
 
       // Add job to queue for background stock deduction
-      await salesQueue.add(
-        'process-stock-deduction',
-        {
-          saleId: sale.id,
-          items: data.items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-          })),
-        },
-        {
-          jobId: `sale-${sale.id}`, // Unique job ID to prevent duplicates
-        }
-      );
+      try {
+        await salesQueue.add(
+          'process-stock-deduction',
+          {
+            saleId: sale.id,
+            items: data.items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+            })),
+          },
+          {
+            jobId: `sale-${sale.id}`, // Unique job ID to prevent duplicates
+          }
+        );
+        console.log(`🚀 Stock deduction job queued for Sale ${sale.id}`);
+      } catch (queueError) {
+        console.error('❌ Failed to queue stock deduction job. Rolling back sale...', queueError);
 
-      console.log(`🚀 Stock deduction job queued for Sale ${sale.id}`);
+        // ROLLBACK: Delete the sale if we can't ensure stock deduction
+        await prisma.sale.delete({
+          where: { id: sale.id },
+        });
+
+        throw new Error('Failed to process sale. System busy, please try again.');
+      }
 
       // Return sale with items
       const saleWithItems = await prisma.sale.findUnique({
@@ -200,10 +210,10 @@ export class SalesService {
         count: sales.length,
         pagination: pagination
           ? {
-              skip: pagination.skip,
-              take: pagination.take,
-              total,
-            }
+            skip: pagination.skip,
+            take: pagination.take,
+            total,
+          }
           : undefined,
       };
     } catch (error) {
