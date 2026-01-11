@@ -42,6 +42,10 @@ export const dailyJsonReportSchema = z.object({
   pendingTransactions: z.number(),
   failedTransactions: z.number(),
   averageTransactionValue: z.string(),
+  paymentMethodBreakdown: z.object({
+    cash: z.string(),
+    ecocash: z.string(),
+  }),
   topProducts: z.array(
     z.object({
       productId: z.string(),

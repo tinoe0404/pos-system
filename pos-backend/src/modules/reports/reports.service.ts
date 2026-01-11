@@ -173,6 +173,19 @@ export class ReportsService {
           revenue: p.revenue.toFixed(2),
         }));
 
+      // Calculate payment method breakdown
+      const paymentBreakdown = completedSales.reduce(
+        (acc, sale) => {
+          if (sale.payment_method === 'CASH') {
+            acc.cash += Number(sale.total);
+          } else if (sale.payment_method === 'ECOCASH') {
+            acc.ecocash += Number(sale.total);
+          }
+          return acc;
+        },
+        { cash: 0, ecocash: 0 }
+      );
+
       return {
         date: startOfDay.toISOString().split('T')[0],
         totalRevenue: totalRevenue.toFixed(2),
@@ -181,6 +194,10 @@ export class ReportsService {
         pendingTransactions: pendingSales.length,
         failedTransactions: failedSales.length,
         averageTransactionValue: averageTransactionValue.toFixed(2),
+        paymentMethodBreakdown: {
+          cash: paymentBreakdown.cash.toFixed(2),
+          ecocash: paymentBreakdown.ecocash.toFixed(2),
+        },
         topProducts,
       };
     } catch (error) {
