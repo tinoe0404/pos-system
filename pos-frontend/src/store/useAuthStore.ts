@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-
 interface User {
     id: string;
     role: 'admin' | 'cashier';
     name: string;
+    email: string;
 }
 
 interface AuthState {

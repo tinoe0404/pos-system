@@ -131,9 +131,7 @@ export class SalesService {
             include: {
               product: {
                 select: {
-                  id: true,
                   name: true,
-                  sku: true,
                   category: true,
                 },
               },
@@ -193,7 +191,15 @@ export class SalesService {
       const sales = await prisma.sale.findMany({
         where,
         include: {
-          items: true,
+          items: {
+            include: {
+              product: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
           user: {
             select: {
               id: true,
@@ -216,6 +222,8 @@ export class SalesService {
           items: sale.items.map((item) => ({
             ...item,
             price_at_sale: item.price_at_sale.toString(),
+            product: (item as any).product,
+            productName: (item as any).product?.name,
           })),
         })),
         count: sales.length,

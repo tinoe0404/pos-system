@@ -16,8 +16,8 @@ export default function Sidebar() {
 
     const navItems = [
         { icon: LayoutGrid, label: 'POS', href: '/pos' },
-        { icon: ClipboardList, label: 'Orders', href: '/pos/orders' },
-        { icon: Settings, label: 'Settings', href: '/pos/settings' },
+        { icon: ClipboardList, label: 'Orders', href: '/orders' },
+        { icon: Settings, label: 'Settings', href: '/settings' },
     ];
 
     return (
@@ -34,8 +34,8 @@ export default function Sidebar() {
                             key={item.href}
                             onClick={() => router.push(item.href)}
                             className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all ${isActive
-                                    ? 'bg-blue-600 text-white shadow-md'
-                                    : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
+                                ? 'bg-blue-600 text-white shadow-md'
+                                : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
                                 }`}
                         >
                             <item.icon className="w-6 h-6" />
