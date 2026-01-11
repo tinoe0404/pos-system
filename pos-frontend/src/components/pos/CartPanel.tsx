@@ -208,7 +208,7 @@ function CartItemRow({ item, onUpdateQuantity, onRemove, disabled }: CartItemRow
 
                 <div className="flex justify-between items-center mt-2">
                     <span className="text-blue-600 font-bold text-sm">
-                        ${(item.price * item.quantity).toFixed(2)}
+                        ${(Number(item.price) * item.quantity).toFixed(2)}
                     </span>
 
                     <div className="flex items-center gap-3 bg-slate-50 rounded-lg p-1">

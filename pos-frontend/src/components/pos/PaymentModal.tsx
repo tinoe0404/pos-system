@@ -133,7 +133,7 @@ export default function PaymentModal({
                                                     <span className="font-bold text-slate-900">{item.quantity}x</span> {item.name}
                                                 </span>
                                                 <span className="text-slate-600">
-                                                    ${(item.price * item.quantity).toFixed(2)}
+                                                    ${(Number(item.price) * item.quantity).toFixed(2)}
                                                 </span>
                                             </div>
                                         ))}
