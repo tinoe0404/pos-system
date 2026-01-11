@@ -27,6 +27,16 @@ export class SalesService {
         throw new Error(`Products not found: ${missingIds.join(', ')}`);
       }
 
+      // Validate stock availability
+      for (const item of data.items) {
+        const product = products.find((p) => p.id === item.productId);
+        if (product && product.stock < item.quantity) {
+          throw new Error(
+            `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}`
+          );
+        }
+      }
+
       // Calculate total
       const total = data.items.reduce(
         (sum, item) => sum + item.priceAtSale * item.quantity,

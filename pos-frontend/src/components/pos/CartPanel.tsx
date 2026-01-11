@@ -64,9 +64,10 @@ export default function CartPanel() {
 
                     toast.success('Order processed successfully');
                 },
-                onError: (error) => {
+                onError: (error: any) => {
                     console.error(error);
-                    toast.error('Failed to process order');
+                    const errorMessage = error.response?.data?.message || 'Failed to process order';
+                    toast.error(errorMessage);
                 },
             }
         );

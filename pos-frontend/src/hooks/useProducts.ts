@@ -7,8 +7,8 @@ export const useProducts = () => {
         queryKey: ['products'],
         queryFn: async () => {
             // Backend returns: { products: Product[], count: number }
-            const res = await api.get<{ products: Product[] }>('/api/products');
-            return res.data.products || [];
+            const res = await api.get<{ products: Product[]; count: number }>('/api/products');
+            return res.data;
         },
     });
 };

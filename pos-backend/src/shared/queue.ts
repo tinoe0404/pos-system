@@ -1,5 +1,6 @@
 import { Queue, Worker, Job } from 'bullmq';
 import { PrismaClient } from '@prisma/client';
+import redis from './redis';
 
 const prisma = new PrismaClient();
 
@@ -93,6 +94,10 @@ async function processStockDeduction(job: Job<StockDeductionJobData>) {
 
       console.log(`✅ Sale ${saleId} completed successfully`);
     });
+
+    // Invalidate product cache
+    await redis.del('all_products');
+    console.log('🗑️  Cache INVALIDATED after stock deduction');
 
     return { success: true, saleId };
   } catch (error: unknown) {

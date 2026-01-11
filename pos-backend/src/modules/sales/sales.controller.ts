@@ -25,6 +25,14 @@ export async function createSaleHandler(
         });
       }
 
+      // Handle insufficient stock error
+      if (error.message.startsWith('Insufficient stock')) {
+        return reply.code(400).send({
+          error: 'Bad Request',
+          message: error.message,
+        });
+      }
+
       return reply.code(500).send({
         error: 'Internal server error',
         message: error.message,

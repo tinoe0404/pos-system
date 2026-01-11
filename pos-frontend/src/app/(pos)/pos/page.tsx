@@ -5,7 +5,7 @@ import ProductCard from '@/components/pos/ProductCard';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 export default function POSPage() {
-    const { data: products, isLoading, isError } = useProducts();
+    const { data: productsData, isLoading, isError } = useProducts();
 
     if (isLoading) {
         return (
@@ -32,10 +32,10 @@ export default function POSPage() {
             </header>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-20">
-                {products?.map((product) => (
+                {productsData?.products.map((product) => (
                     <ProductCard key={product.id} product={product} />
                 ))}
-                {products?.length === 0 && (
+                {productsData?.products.length === 0 && (
                     <div className="col-span-full py-20 text-center text-slate-400">
                         No products found.
                     </div>
