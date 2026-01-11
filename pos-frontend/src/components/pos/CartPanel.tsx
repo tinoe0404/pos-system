@@ -162,6 +162,9 @@ export default function CartPanel() {
                 onClose={() => setIsPaymentModalOpen(false)}
                 onConfirm={handleConfirmPayment}
                 totalAmount={finalTotal}
+                subtotal={total}
+                tax={tax}
+                items={items}
                 isLoading={isPending}
             />
 
