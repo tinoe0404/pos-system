@@ -1,198 +1,168 @@
 'use client';
 
+import { useDailyReport, downloadDailyReportPDF } from '@/hooks/useReports';
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import api from '@/lib/api';
-import { FileDown, Loader2, DollarSign, ShoppingBag, TrendingUp, AlertCircle } from 'lucide-react';
-import SalesChart from '@/components/admin/SalesChart';
+import { Download, Calendar, DollarSign, ShoppingCart, TrendingUp, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface DailyReportResponse {
-    date: string;
-    totalRevenue: string;
-    totalTransactions: number;
-    completedTransactions: number;
-    pendingTransactions: number;
-    failedTransactions: number;
-    averageTransactionValue: string;
-    paymentMethodBreakdown: {
-        cash: string;
-        ecocash: string;
-    };
-    topProducts: Array<{
-        productId: string;
-        productName: string;
-        quantity: number;
-        revenue: string;
-    }>;
-}
-
 export default function ReportsPage() {
+    const [selectedDate, setSelectedDate] = useState<string>(
+        new Date().toISOString().split('T')[0]
+    );
+    const { data, isLoading, error } = useDailyReport(selectedDate);
     const [isDownloading, setIsDownloading] = useState(false);
 
-    const { data: report, isLoading, isError } = useQuery({
-        queryKey: ['daily-report'],
-        queryFn: async () => {
-            const res = await api.get<DailyReportResponse>('/api/reports/daily');
-            return res.data;
-        },
-    });
-
     const handleDownloadPDF = async () => {
+        setIsDownloading(true);
         try {
-            setIsDownloading(true);
-            const response = await api.get('/api/reports/daily/pdf', {
-                responseType: 'blob',
-            });
-
-            // Create blob link to download
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `daily-sales-report-${new Date().toISOString().split('T')[0]}.pdf`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-
+            await downloadDailyReportPDF(selectedDate);
             toast.success('Report downloaded successfully');
         } catch (error) {
-            console.error('Download failed:', error);
-            toast.error('Failed to download PDF report');
+            toast.error('Failed to download report');
         } finally {
             setIsDownloading(false);
         }
     };
 
-    if (isLoading) {
+    if (error) {
         return (
-            <div className="flex items-center justify-center h-96">
-                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-            </div>
-        );
-    }
-
-    if (isError || !report) {
-        return (
-            <div className="p-6">
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3 text-red-700">
-                    <AlertCircle className="w-5 h-5" />
-                    <p>Failed to load sales data. Please try again later.</p>
+            <div className="p-4 md:p-8">
+                <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
+                    Failed to load report. Please try again.
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="p-6 space-y-6">
+        <div className="p-4 md:p-8">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                 <div>
-                    <h2 className="text-2xl font-bold text-slate-800">Daily Sales Report</h2>
-                    <p className="text-slate-500">Overview for {new Date(report.date).toLocaleDateString()}</p>
+                    <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Daily Reports</h1>
+                    <p className="text-sm text-slate-500 mt-1">View and download daily sales reports</p>
                 </div>
                 <button
                     onClick={handleDownloadPDF}
-                    disabled={isDownloading}
-                    className="flex items-center gap-2 px-4 py-3 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-900 transition-colors shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
+                    disabled={isDownloading || isLoading}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                 >
                     {isDownloading ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                        <FileDown className="w-5 h-5" />
+                        <Download className="w-4 h-4" />
                     )}
-                    Download PDF
+                    <span className="font-medium">Download PDF</span>
                 </button>
             </div>
 
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Revenue */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-                            <DollarSign className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <span className="text-sm font-medium text-slate-400">Total Revenue</span>
-                    </div>
-                    <div>
-                        <h3 className="text-3xl font-bold text-slate-800">${report.totalRevenue}</h3>
-                        <p className="text-sm text-slate-500 mt-1">Based on completed sales</p>
-                    </div>
-                </div>
-
-                {/* Transactions */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
-                            <ShoppingBag className="w-6 h-6 text-purple-600" />
-                        </div>
-                        <span className="text-sm font-medium text-slate-400">Transactions</span>
-                    </div>
-                    <div>
-                        <h3 className="text-3xl font-bold text-slate-800">{report.completedTransactions}</h3>
-                        <div className="flex gap-3 mt-1 text-sm">
-                            <span className="text-amber-600">{report.pendingTransactions} Pending</span>
-                            <span className="text-slate-300">•</span>
-                            <span className="text-red-500">{report.failedTransactions} Failed</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Avg Value */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center">
-                            <TrendingUp className="w-6 h-6 text-emerald-600" />
-                        </div>
-                        <span className="text-sm font-medium text-slate-400">Avg. Transaction</span>
-                    </div>
-                    <div>
-                        <h3 className="text-3xl font-bold text-slate-800">${report.averageTransactionValue}</h3>
-                        <p className="text-sm text-slate-500 mt-1">Per completed sale</p>
-                    </div>
-                </div>
+            {/* Date Selector */}
+            <div className="mb-6">
+                <label htmlFor="date" className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
+                    <Calendar className="w-4 h-4" />
+                    Select Date
+                </label>
+                <input
+                    id="date"
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    max={new Date().toISOString().split('T')[0]}
+                    className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto"
+                />
             </div>
 
-            {/* Charts & Top Products */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Revenue Breakdown Chart */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <h3 className="text-lg font-bold text-slate-800 mb-6">Revenue by Payment Method</h3>
-                    <SalesChart
-                        data={{
-                            cash: Number(report.paymentMethodBreakdown.cash),
-                            ecocash: Number(report.paymentMethodBreakdown.ecocash)
-                        }}
-                    />
+            {/* Loading State */}
+            {isLoading ? (
+                <div className="flex items-center justify-center py-20">
+                    <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
                 </div>
-
-                {/* Top Products */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <h3 className="text-lg font-bold text-slate-800 mb-6">Top Selling Products</h3>
-                    <div className="space-y-4">
-                        {report.topProducts.length === 0 ? (
-                            <p className="text-slate-500 text-center py-8">No sales data available yet.</p>
-                        ) : (
-                            report.topProducts.map((product, index) => (
-                                <div key={product.productId} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-colors">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center font-bold text-slate-500 text-sm">
-                                            #{index + 1}
-                                        </div>
-                                        <div>
-                                            <p className="font-medium text-slate-800">{product.productName}</p>
-                                            <p className="text-sm text-slate-500">{product.quantity} units sold</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="font-bold text-slate-800">${product.revenue}</p>
-                                    </div>
+            ) : (
+                <div className="space-y-6">
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-sm font-medium text-slate-500">Total Sales</h3>
+                                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                                    <ShoppingCart className="w-5 h-5" />
                                 </div>
-                            ))
+                            </div>
+                            <p className="text-3xl font-bold text-slate-900">{data?.totalSales || 0}</p>
+                            <p className="text-xs text-slate-400 mt-1">Transactions</p>
+                        </div>
+
+                        <div className="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-sm font-medium text-slate-500">Total Revenue</h3>
+                                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                                    <DollarSign className="w-5 h-5" />
+                                </div>
+                            </div>
+                            <p className="text-3xl font-bold text-slate-900">${data?.totalRevenue || '0.00'}</p>
+                            <p className="text-xs text-slate-400 mt-1">USD</p>
+                        </div>
+
+                        <div className="p-6 bg-white rounded-xl shadow-sm border border-slate-200 sm:col-span-2 lg:col-span-1">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-sm font-medium text-slate-500">Avg. Transaction</h3>
+                                <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                                    <TrendingUp className="w-5 h-5" />
+                                </div>
+                            </div>
+                            <p className="text-3xl font-bold text-slate-900">
+                                ${data?.totalSales && data?.totalRevenue
+                                    ? (parseFloat(data.totalRevenue) / data.totalSales).toFixed(2)
+                                    : '0.00'}
+                            </p>
+                            <p className="text-xs text-slate-400 mt-1">Per sale</p>
+                        </div>
+                    </div>
+
+                    {/* Top Products */}
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h2 className="text-lg font-bold text-slate-800 mb-4">Top Products</h2>
+                        {data?.topProducts && data.topProducts.length > 0 ? (
+                            <div className="space-y-3">
+                                {data.topProducts.map((product, index) => (
+                                    <div key={index} className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+                                        <div className="flex items-center gap-3">
+                                            <span className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-600 rounded-full text-sm font-bold">
+                                                {index + 1}
+                                            </span>
+                                            <span className="font-medium text-slate-800">{product.name}</span>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="font-bold text-slate-900">{product.quantity} sold</p>
+                                            <p className="text-sm text-slate-500">${product.revenue}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-slate-400 text-center py-8">No sales data for this date</p>
+                        )}
+                    </div>
+
+                    {/* Payment Methods */}
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h2 className="text-lg font-bold text-slate-800 mb-4">Payment Methods</h2>
+                        {data?.paymentMethods && Object.keys(data.paymentMethods).length > 0 ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                {Object.entries(data.paymentMethods).map(([method, count]) => (
+                                    <div key={method} className="p-4 bg-slate-50 rounded-lg">
+                                        <p className="text-sm text-slate-500 mb-1">{method}</p>
+                                        <p className="text-2xl font-bold text-slate-900">{count as number}</p>
+                                        <p className="text-xs text-slate-400">transactions</p>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-slate-400 text-center py-8">No payment data available</p>
                         )}
                     </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }

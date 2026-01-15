@@ -1,119 +1,163 @@
 'use client';
 
-import { useAnalytics } from '@/hooks/useAnalytics';
+import { useAnalytics, useBestSellers } from '@/hooks/useAnalytics';
 import { useLowStock } from '@/hooks/useLowStock';
-import StatCard from '@/components/admin/StatCard';
-import { DollarSign, ShoppingCart, AlertCircle, Package } from 'lucide-react';
+import { DollarSign, ShoppingCart, Package, TrendingUp, AlertTriangle, Loader2 } from 'lucide-react';
 
-export default function AdminDashboard() {
+export default function DashboardPage() {
     const { data: analytics, isLoading: analyticsLoading } = useAnalytics();
+    const { data: bestSellers, isLoading: bestSellersLoading } = useBestSellers(5);
     const { data: lowStock, isLoading: lowStockLoading } = useLowStock();
 
+    const isLoading = analyticsLoading || bestSellersLoading || lowStockLoading;
+
     return (
-        <div className="p-6 space-y-6">
-            {/* Page Header */}
-            <div>
-                <h2 className="text-2xl font-bold text-slate-800">Dashboard Overview</h2>
-                <p className="text-slate-500">Real-time analytics for today</p>
+        <div className="p-4 md:p-8">
+            {/* Header */}
+            <div className="mb-6 md:mb-8">
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Dashboard</h1>
+                <p className="text-sm text-slate-500 mt-1">Overview of your business metrics</p>
             </div>
 
-            {/* Stat Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard
-                    title="Total Revenue"
-                    value={analytics?.totalRevenue ? `${Number(analytics.totalRevenue).toFixed(2)}` : '0.00'}
-                    icon={DollarSign}
-                    gradient="bg-gradient-to-br from-emerald-500 to-emerald-600"
-                    isLoading={analyticsLoading}
-                    prefix="$"
-                    subtitle="Today's earnings"
-                />
-
-                <StatCard
-                    title="Total Sales"
-                    value={analytics?.totalTransactions || 0}
-                    icon={ShoppingCart}
-                    gradient="bg-gradient-to-br from-blue-500 to-blue-600"
-                    isLoading={analyticsLoading}
-                    subtitle="Completed transactions"
-                />
-
-                <StatCard
-                    title="Low Stock Items"
-                    value={lowStock?.count || 0}
-                    icon={AlertCircle}
-                    gradient="bg-gradient-to-br from-orange-500 to-orange-600"
-                    isLoading={lowStockLoading}
-                    subtitle={`Below ${lowStock?.threshold || 10} units`}
-                />
-
-                <StatCard
-                    title="Total Stock"
-                    value={analytics?.totalStock || 0}
-                    icon={Package}
-                    gradient="bg-gradient-to-br from-purple-500 to-purple-600"
-                    isLoading={analyticsLoading}
-                    subtitle="Units in inventory"
-                />
-            </div>
-
-            {/* Quick Actions or Additional Info */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                    <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <AlertCircle className="w-5 h-5 text-orange-500" />
-                        Low Stock Alerts
-                    </h3>
-                    {lowStockLoading ? (
-                        <div className="space-y-2">
-                            {[1, 2, 3].map((i) => (
-                                <div key={i} className="h-12 bg-slate-100 rounded animate-pulse" />
-                            ))}
-                        </div>
-                    ) : lowStock?.lowStockProducts.length ? (
-                        <div className="space-y-2 max-h-64 overflow-y-auto">
-                            {lowStock.lowStockProducts.slice(0, 5).map((product) => (
-                                <div
-                                    key={product.id}
-                                    className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-100"
-                                >
-                                    <div>
-                                        <p className="font-medium text-slate-800 text-sm">{product.name}</p>
-                                        <p className="text-xs text-slate-500">{product.category}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="font-bold text-orange-600">{product.stock} left</p>
-                                        <p className="text-xs text-slate-400">SKU: {product.sku}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-slate-400 text-sm">All products are well stocked! 🎉</p>
-                    )}
+            {isLoading ? (
+                <div className="flex items-center justify-center py-20">
+                    <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
                 </div>
-
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg p-6 text-white">
-                    <h3 className="font-bold mb-2">Quick Stats</h3>
-                    <p className="text-blue-100 text-sm mb-4">
-                        Today's performance at a glance
-                    </p>
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center bg-white/10 backdrop-blur-sm rounded-lg p-3">
-                            <span className="text-sm">Average Order Value</span>
-                            <span className="font-bold">
-                                ${analytics?.totalTransactions
-                                    ? (Number(analytics.totalRevenue) / analytics.totalTransactions).toFixed(2)
-                                    : '0.00'}
-                            </span>
+            ) : (
+                <div className="space-y-6">
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-sm font-medium text-slate-500">Total Revenue</h3>
+                                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                                    <DollarSign className="w-5 h-5" />
+                                </div>
+                            </div>
+                            <p className="text-2xl md:text-3xl font-bold text-slate-900">
+                                ${analytics?.totalRevenue || '0.00'}
+                            </p>
+                            <p className="text-xs text-slate-400 mt-1">Today</p>
                         </div>
-                        <div className="flex justify-between items-center bg-white/10 backdrop-blur-sm rounded-lg p-3">
-                            <span className="text-sm">Inventory Value</span>
-                            <span className="font-bold">Live Data</span>
+
+                        <div className="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-sm font-medium text-slate-500">Transactions</h3>
+                                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                                    <ShoppingCart className="w-5 h-5" />
+                                </div>
+                            </div>
+                            <p className="text-2xl md:text-3xl font-bold text-slate-900">
+                                {analytics?.totalTransactions || 0}
+                            </p>
+                            <p className="text-xs text-slate-400 mt-1">Today</p>
+                        </div>
+
+                        <div className="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-sm font-medium text-slate-500">Total Stock</h3>
+                                <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                                    <Package className="w-5 h-5" />
+                                </div>
+                            </div>
+                            <p className="text-2xl md:text-3xl font-bold text-slate-900">
+                                {analytics?.totalStock || 0}
+                            </p>
+                            <p className="text-xs text-slate-400 mt-1">Items in inventory</p>
+                        </div>
+
+                        <div className="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-sm font-medium text-slate-500">Avg. Sale</h3>
+                                <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
+                                    <TrendingUp className="w-5 h-5" />
+                                </div>
+                            </div>
+                            <p className="text-2xl md:text-3xl font-bold text-slate-900">
+                                ${analytics?.totalTransactions && analytics?.totalRevenue
+                                    ? (parseFloat(analytics.totalRevenue) / analytics.totalTransactions).toFixed(2)
+                                    : '0.00'}
+                            </p>
+                            <p className="text-xs text-slate-400 mt-1">Per transaction</p>
+                        </div>
+                    </div>
+
+                    {/* Best Sellers & Low Stock */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Best Sellers Widget */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-lg font-bold text-slate-800">Top Products</h2>
+                                <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
+                                    <TrendingUp className="w-4 h-4" />
+                                </div>
+                            </div>
+                            {bestSellers?.products && bestSellers.products.length > 0 ? (
+                                <div className="space-y-3">
+                                    {bestSellers.products.map((product, index) => (
+                                        <div key={product.id} className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+                                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                <span className="w-7 h-7 flex items-center justify-center bg-blue-100 text-blue-700 rounded-full text-xs font-bold shrink-0">
+                                                    {index + 1}
+                                                </span>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-medium text-slate-800 truncate">{product.name}</p>
+                                                    <p className="text-xs text-slate-400">{product.category}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right shrink-0 ml-2">
+                                                <p className="font-bold text-slate-900">{product.totalSold}</p>
+                                                <p className="text-xs text-slate-500">${product.totalRevenue}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-slate-400 text-center py-8">No sales data available</p>
+                            )}
+                        </div>
+
+                        {/* Low Stock Alerts */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <h2 className="text-lg font-bold text-slate-800">Low Stock Alerts</h2>
+                                    {lowStock?.count ? (
+                                        <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-bold rounded-full">
+                                            {lowStock.count}
+                                        </span>
+                                    ) : null}
+                                </div>
+                                <div className="p-1.5 bg-red-50 text-red-600 rounded-lg">
+                                    <AlertTriangle className="w-4 h-4" />
+                                </div>
+                            </div>
+                            {lowStock?.lowStockProducts && lowStock.lowStockProducts.length > 0 ? (
+                                <div className="space-y-3">
+                                    {lowStock.lowStockProducts.slice(0, 5).map((product) => (
+                                        <div key={product.id} className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-medium text-slate-800 truncate">{product.name}</p>
+                                                <p className="text-xs text-slate-400">{product.sku}</p>
+                                            </div>
+                                            <div className="shrink-0 ml-2">
+                                                <span className="px-2 py-1 bg-red-50 text-red-700 text-sm font-bold rounded">
+                                                    {product.stock} left
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-emerald-600 text-center py-8 flex items-center justify-center gap-2">
+                                    <Package className="w-5 h-5" />
+                                    All products well stocked
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }

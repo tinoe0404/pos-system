@@ -12,8 +12,8 @@ export default function SettingsPage() {
     const { user, logout } = useAuthStore();
     const [showTestReceipt, setShowTestReceipt] = useState(false);
 
-    const handleLogout = () => {
-        logout();
+    const handleLogout = async () => {
+        await logout();
         router.push('/login');
     };
 

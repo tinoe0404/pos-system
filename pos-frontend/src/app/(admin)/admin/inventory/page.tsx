@@ -43,19 +43,19 @@ export default function InventoryPage() {
     };
 
     return (
-        <div className="p-6 space-y-6">
+        <div className="p-4 md:p-6 space-y-4 md:space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-slate-800">Inventory Management</h2>
-                    <p className="text-slate-500">Manage your products and stock levels</p>
+                    <h2 className="text-xl md:text-2xl font-bold text-slate-800">Inventory Management</h2>
+                    <p className="text-sm text-slate-500">Manage your products and stock levels</p>
                 </div>
                 <button
                     onClick={handleAddProduct}
-                    className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
                 >
                     <Plus className="w-5 h-5" />
-                    Add Product
+                    <span>Add Product</span>
                 </button>
             </div>
 
@@ -128,101 +128,107 @@ export default function InventoryPage() {
                         </p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-slate-50 border-b border-slate-200">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                        Product
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                        SKU
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                        Category
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                        Price
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                        Stock
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-200">
-                                {filteredProducts.map((product) => (
-                                    <tr key={product.id} className="hover:bg-slate-50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div>
-                                                <p className="font-medium text-slate-900">{product.name}</p>
-                                                {product.description && (
-                                                    <p className="text-sm text-slate-500 line-clamp-1">
-                                                        {product.description}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="font-mono text-sm text-slate-600">{product.sku}</span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="text-sm text-slate-600">
-                                                {product.category || '-'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="font-medium text-slate-900">
-                                                ${Number(product.price).toFixed(2)}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-medium text-slate-900">{product.stock}</span>
-                                                {product.stock < 10 && (
-                                                    <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-medium rounded">
-                                                        Low
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span
-                                                className={`px-2 py-1 text-xs font-medium rounded ${product.active
-                                                    ? 'bg-emerald-100 text-emerald-700'
-                                                    : 'bg-slate-100 text-slate-600'
-                                                    }`}
-                                            >
-                                                {product.active ? 'Active' : 'Inactive'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button
-                                                    onClick={() => handleEditProduct(product)}
-                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                    title="Edit product"
-                                                >
-                                                    <Edit className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteProduct(product.id, product.name)}
-                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Delete product"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </td>
+                    <div>
+                        {/* Mobile scroll hint */}
+                        <div className="md:hidden px-4 py-2 bg-blue-50 text-blue-700 text-xs text-center border-b border-blue-100">
+                            ← Scroll horizontally to see all columns →
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-slate-50 border-b border-slate-200">
+                                    <tr>
+                                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                            Product
+                                        </th>
+                                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                            SKU
+                                        </th>
+                                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                            Category
+                                        </th>
+                                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                            Price
+                                        </th>
+                                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                            Stock
+                                        </th>
+                                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                            Status
+                                        </th>
+                                        <th className="px-4 md:px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                            Actions
+                                        </th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-slate-200">
+                                    {filteredProducts.map((product) => (
+                                        <tr key={product.id} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                                                <div>
+                                                    <p className="font-medium text-slate-900">{product.name}</p>
+                                                    {product.description && (
+                                                        <p className="text-sm text-slate-500 line-clamp-1 max-w-xs">
+                                                            {product.description}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                                                <span className="font-mono text-sm text-slate-600">{product.sku}</span>
+                                            </td>
+                                            <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                                                <span className="text-sm text-slate-600">
+                                                    {product.category || '-'}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                                                <span className="font-medium text-slate-900">
+                                                    ${Number(product.price).toFixed(2)}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-medium text-slate-900">{product.stock}</span>
+                                                    {product.stock < 10 && (
+                                                        <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-medium rounded">
+                                                            Low
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                                                <span
+                                                    className={`px-2 py-1 text-xs font-medium rounded ${product.active
+                                                        ? 'bg-emerald-100 text-emerald-700'
+                                                        : 'bg-slate-100 text-slate-600'
+                                                        }`}
+                                                >
+                                                    {product.active ? 'Active' : 'Inactive'}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <button
+                                                        onClick={() => handleEditProduct(product)}
+                                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                        title="Edit product"
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteProduct(product.id, product.name)}
+                                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                        title="Delete product"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
             </div>

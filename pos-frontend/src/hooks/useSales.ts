@@ -27,7 +27,8 @@ export const useSales = () => {
     return useQuery({
         queryKey: ['sales'],
         queryFn: async () => {
-            const { data } = await api.get<any>('/api/sales');
+            // Use /sales/today endpoint for better performance
+            const { data } = await api.get<any>('/api/sales/today');
             console.log('UseSales Raw API Data:', data); // Debugging log
             // Transform snake_case API response to camelCase interface
             const transformedSales: Sale[] = data.sales.map((sale: any) => ({
