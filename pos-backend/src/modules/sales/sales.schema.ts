@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const saleItemInputSchema = z.object({
   productId: z.string().min(1),
   quantity: z.number().int().positive().min(1),
-  priceAtSale: z.number().positive().multipleOf(0.01),
+  priceAtSale: z.number().positive(),
 });
 
 export const createSaleSchema = z.object({
