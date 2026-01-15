@@ -169,6 +169,69 @@ export class SalesService {
   /**
    * Get all sales with pagination and filters
    */
+  async getTodaySales(filters?: { userId?: string }) {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const where: any = {
+        created_at: {
+          gte: today,
+          lt: tomorrow,
+        },
+      };
+
+      if (filters?.userId) {
+        where.user_id = filters.userId;
+      }
+
+      const sales = await prisma.sale.findMany({
+        where,
+        include: {
+          items: {
+            include: {
+              product: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+          user: {
+            select: {
+              id: true,
+              username: true,
+              role: true,
+            },
+          },
+        },
+        orderBy: {
+          created_at: 'desc',
+        },
+      });
+
+      return {
+        sales: sales.map((sale) => ({
+          ...sale,
+          total: sale.total.toString(),
+          items: sale.items.map((item) => ({
+            ...item,
+            price_at_sale: item.price_at_sale.toString(),
+            product: (item as any).product,
+            productName: (item as any).product?.name,
+          })),
+        })),
+        count: sales.length,
+      };
+    } catch (error) {
+      console.error('Error fetching today\'s sales:', error);
+      throw error;
+    }
+  }
+
   async getAllSales(
     filters?: { userId?: string; status?: string },
     pagination?: SalesPaginationQuery

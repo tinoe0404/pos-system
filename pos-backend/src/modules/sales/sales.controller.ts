@@ -107,3 +107,27 @@ export async function getAllSalesHandler(
     });
   }
 }
+
+export async function getTodaySalesHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  try {
+    const user = request.user as { id: string; role: string };
+
+    // Cashiers can only see their own sales
+    const filters: any = {};
+    if (user.role === 'cashier') {
+      filters.userId = user.id;
+    }
+
+    const result = await salesService.getTodaySales(filters);
+    return reply.code(200).send(result);
+  } catch (error) {
+    request.log.error(error);
+    return reply.code(500).send({
+      error: 'Internal server error',
+      message: 'Failed to fetch today\'s sales',
+    });
+  }
+}

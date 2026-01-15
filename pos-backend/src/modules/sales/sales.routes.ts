@@ -12,6 +12,7 @@ import {
   createSaleHandler,
   getSaleByIdHandler,
   getAllSalesHandler,
+  getTodaySalesHandler,
 } from './sales.controller';
 import { authenticate } from '../auth/auth.middleware';
 
@@ -47,6 +48,20 @@ async function salesRoutes(app: FastifyInstance) {
       },
     },
     getAllSalesHandler
+  );
+
+  // GET /api/sales/today - Get sales for current day (Protected: All authenticated users)
+  server.get(
+    '/today',
+    {
+      onRequest: [authenticate],
+      schema: {
+        response: {
+          200: salesListResponseSchema, // Reusing list schema as structure matches
+        },
+      },
+    },
+    getTodaySalesHandler
   );
 
   // GET /api/sales/:id - Get sale by ID with product details (Protected: All authenticated users)
