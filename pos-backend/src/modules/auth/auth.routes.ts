@@ -1,11 +1,12 @@
 import { FastifyInstance } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
+import { z } from 'zod';
 import {
   loginSchema,
   authResponseSchema,
   meResponseSchema,
 } from './auth.schema';
-import { loginHandler, meHandler } from './auth.controller';
+import { loginHandler, meHandler, logoutHandler } from './auth.controller';
 import { authenticate } from './auth.middleware';
 
 async function authRoutes(app: FastifyInstance) {
@@ -37,6 +38,22 @@ async function authRoutes(app: FastifyInstance) {
       },
     },
     meHandler
+  );
+
+  // POST /api/auth/logout
+  server.post(
+    '/logout',
+    {
+      onRequest: [authenticate],
+      schema: {
+        response: {
+          200: z.object({
+            message: z.string(),
+          }),
+        },
+      },
+    },
+    logoutHandler
   );
 }
 

@@ -107,3 +107,10 @@ export async function meHandler(
     });
   }
 }
+
+export async function logoutHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  return reply.code(200).send({ message: 'Logged out successfully' });
+}
