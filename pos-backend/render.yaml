@@ -1,6 +1,7 @@
 services:
   - type: web
     name: pos-backend
+    rootDir: pos-backend
     runtime: node
     region: oregon
     plan: free
