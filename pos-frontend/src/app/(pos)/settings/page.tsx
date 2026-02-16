@@ -1,6 +1,6 @@
 'use client';
 
-import { Printer, Monitor, User, LogOut, CheckCircle2 } from 'lucide-react';
+import { Printer, Monitor, User, LogOut, CheckCircle2, Keyboard } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -11,13 +11,13 @@ export default function SettingsPage() {
     const router = useRouter();
     const { user, logout } = useAuthStore();
     const [showTestReceipt, setShowTestReceipt] = useState(false);
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
     const handleLogout = async () => {
         await logout();
         router.push('/login');
     };
 
-    // Dummy data for test print
     const testOrder = {
         id: 'TEST-PRINT-001',
         items: [
@@ -30,90 +30,128 @@ export default function SettingsPage() {
         tax: 2.10,
     };
 
+    const shortcuts = [
+        { key: '/', desc: 'Focus search' },
+        { key: 'F2', desc: 'Open payment' },
+        { key: 'F4', desc: 'Hold order' },
+        { key: 'Esc', desc: 'Close modal / clear search' },
+    ];
+
     return (
-        <div className="flex flex-col h-full bg-slate-50">
+        <div className="flex flex-col h-full">
             {/* Header */}
-            <header className="px-6 py-4 bg-white border-b border-slate-200">
-                <h1 className="text-xl font-bold text-slate-800">Settings</h1>
+            <header className="px-6 py-4 border-b border-card-border shrink-0">
+                <h1 className="text-lg font-semibold text-foreground">Settings</h1>
             </header>
 
             {/* Content */}
-            <main className="flex-1 overflow-auto p-6">
-                <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Printer Settings Card */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <main className="flex-1 overflow-auto p-4 lg:p-6">
+                <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Printer Card */}
+                    <div className="bg-card p-5 rounded-xl border border-card-border">
                         <div className="flex items-start justify-between mb-4">
-                            <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-                                <Printer className="w-6 h-6" />
+                            <div className="p-2.5 bg-primary-muted text-primary rounded-xl">
+                                <Printer className="w-5 h-5" />
                             </div>
-                            <div className="flex items-center gap-2 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                            <div className="flex items-center gap-1.5 text-[11px] font-medium text-success bg-success-muted px-2 py-1 rounded-full">
                                 <CheckCircle2 className="w-3 h-3" />
                                 Ready
                             </div>
                         </div>
-                        <h2 className="text-lg font-bold text-slate-900 mb-2">Printer Setup</h2>
-                        <p className="text-sm text-slate-500 mb-6">
+                        <h2 className="text-base font-semibold text-foreground mb-1">Printer Setup</h2>
+                        <p className="text-sm text-foreground-muted mb-5">
                             Configure printer connection and test receipt printing.
                         </p>
                         <button
                             onClick={() => setShowTestReceipt(true)}
-                            className="w-full py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
+                            className="w-full h-10 bg-background-tertiary border border-card-border text-foreground text-sm font-medium rounded-lg hover:bg-card-hover hover:border-border-hover transition-all"
                         >
                             Test Print Receipt
                         </button>
                     </div>
 
                     {/* Station Info Card */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                        <div className="flex items-start justify-between mb-4">
-                            <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
-                                <Monitor className="w-6 h-6" />
-                            </div>
+                    <div className="bg-card p-5 rounded-xl border border-card-border">
+                        <div className="p-2.5 bg-primary-muted text-primary rounded-xl w-fit mb-4">
+                            <Monitor className="w-5 h-5" />
                         </div>
-                        <h2 className="text-lg font-bold text-slate-900 mb-2">Station Information</h2>
-                        <div className="space-y-3 mb-2">
-                            <div className="flex justify-between text-sm py-2 border-b border-slate-50">
-                                <span className="text-slate-500">Station ID</span>
-                                <span className="font-mono font-medium text-slate-900">POS-01</span>
-                            </div>
-                            <div className="flex justify-between text-sm py-2 border-b border-slate-50">
-                                <span className="text-slate-500">Location</span>
-                                <span className="font-medium text-slate-900">Main Hall</span>
-                            </div>
-                            <div className="flex justify-between text-sm py-2">
-                                <span className="text-slate-500">Version</span>
-                                <span className="font-mono font-medium text-slate-900">v1.2.0</span>
-                            </div>
+                        <h2 className="text-base font-semibold text-foreground mb-3">Station Information</h2>
+                        <div className="space-y-2.5">
+                            {[
+                                { label: 'Station ID', value: 'POS-01' },
+                                { label: 'Location', value: 'Main Hall' },
+                                { label: 'Version', value: 'v2.0.0' },
+                            ].map((item) => (
+                                <div key={item.label} className="flex justify-between text-sm py-1.5 border-b border-card-border last:border-0">
+                                    <span className="text-foreground-muted">{item.label}</span>
+                                    <span className="font-mono font-medium text-foreground">{item.value}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Keyboard Shortcuts */}
+                    <div className="bg-card p-5 rounded-xl border border-card-border">
+                        <div className="p-2.5 bg-primary-muted text-primary rounded-xl w-fit mb-4">
+                            <Keyboard className="w-5 h-5" />
+                        </div>
+                        <h2 className="text-base font-semibold text-foreground mb-3">Keyboard Shortcuts</h2>
+                        <div className="space-y-2">
+                            {shortcuts.map((s) => (
+                                <div key={s.key} className="flex items-center justify-between py-1.5">
+                                    <span className="text-sm text-foreground-muted">{s.desc}</span>
+                                    <kbd className="text-[11px] font-mono bg-background-tertiary text-foreground px-2 py-1 rounded border border-card-border">{s.key}</kbd>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
                     {/* Account Card */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 md:col-span-2">
-                        <div className="flex flex-col md:flex-row items-center md:items-start md:justify-between gap-6">
-                            <div className="flex items-center gap-4">
-                                <div className="p-4 bg-slate-100 text-slate-600 rounded-full">
-                                    <User className="w-8 h-8" />
-                                </div>
-                                <div>
-                                    <h2 className="text-lg font-bold text-slate-900">{user?.name || 'Cashier'}</h2>
-                                    <p className="text-sm text-slate-500">{user?.role || 'Staff Member'}</p>
-                                    <p className="text-xs text-slate-400 mt-1 font-mono">{user?.email}</p>
+                    <div className="bg-card p-5 rounded-xl border border-card-border">
+                        <div className="flex items-center gap-4 mb-5">
+                            <div className="p-3 bg-background-tertiary text-foreground-muted rounded-full">
+                                <User className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h2 className="text-base font-semibold text-foreground">{user?.name || 'Cashier'}</h2>
+                                <p className="text-sm text-foreground-muted capitalize">{user?.role || 'Staff'}</p>
+                                {user?.email && (
+                                    <p className="text-xs text-foreground-subtle font-mono mt-0.5">{user.email}</p>
+                                )}
+                            </div>
+                        </div>
+                        {showLogoutConfirm ? (
+                            <div className="space-y-2">
+                                <p className="text-sm text-foreground-muted text-center">Are you sure you want to log out?</p>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setShowLogoutConfirm(false)}
+                                        className="flex-1 h-10 bg-background-tertiary border border-card-border text-foreground text-sm font-medium rounded-lg hover:bg-card-hover transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleLogout}
+                                        className="flex-1 h-10 bg-destructive-muted text-destructive text-sm font-medium rounded-lg hover:bg-destructive/20 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                        Logout
+                                    </button>
                                 </div>
                             </div>
-
+                        ) : (
                             <button
-                                onClick={handleLogout}
-                                className="w-full md:w-auto px-8 py-3 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 hover:text-red-700 transition-colors flex items-center justify-center gap-2"
+                                onClick={() => setShowLogoutConfirm(true)}
+                                className="w-full h-10 bg-destructive-muted text-destructive text-sm font-medium rounded-lg hover:bg-destructive/20 transition-colors flex items-center justify-center gap-2"
                             >
                                 <LogOut className="w-4 h-4" />
                                 Logout
                             </button>
-                        </div>
+                        )}
                     </div>
                 </div>
             </main>
 
-            {/* Test Receipt Modal */}
             <ReceiptModal
                 isOpen={showTestReceipt}
                 onClose={() => setShowTestReceipt(false)}

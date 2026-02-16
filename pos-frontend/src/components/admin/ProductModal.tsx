@@ -1,6 +1,6 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { productFormSchema, ProductFormData } from '@/schemas/product.schema';
@@ -32,21 +32,13 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
         handleSubmit,
         formState: { errors },
         reset,
-        setValue,
     } = useForm<ProductFormData>({
         resolver: zodResolver(productFormSchema),
         defaultValues: {
-            name: '',
-            description: '',
-            price: 0,
-            stock: 0,
-            sku: '',
-            category: '',
-            is_active: true,
+            name: '', description: '', price: 0, stock: 0, sku: '', category: '', is_active: true,
         },
     });
 
-    // Reset form when modal opens/closes or product changes
     useEffect(() => {
         if (isOpen && product) {
             reset({
@@ -59,36 +51,15 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                 is_active: product.is_active,
             });
         } else if (isOpen && !product) {
-            reset({
-                name: '',
-                description: '',
-                price: 0,
-                stock: 0,
-                sku: '',
-                category: '',
-                is_active: true,
-            });
+            reset({ name: '', description: '', price: 0, stock: 0, sku: '', category: '', is_active: true });
         }
     }, [isOpen, product, reset]);
 
     const onSubmit = async (data: ProductFormData) => {
         if (isEditMode) {
-            updateMutation.mutate(
-                { id: product.id, data },
-                {
-                    onSuccess: () => {
-                        onClose();
-                        reset();
-                    },
-                }
-            );
+            updateMutation.mutate({ id: product.id, data }, { onSuccess: () => { onClose(); reset(); } });
         } else {
-            createMutation.mutate(data, {
-                onSuccess: () => {
-                    onClose();
-                    reset();
-                },
-            });
+            createMutation.mutate(data, { onSuccess: () => { onClose(); reset(); } });
         }
     };
 
@@ -96,18 +67,20 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
 
     if (!isOpen) return null;
 
+    const inputClass = 'w-full h-11 px-4 bg-input-bg border border-input-border rounded-xl text-sm text-foreground outline-none transition-all focus:border-input-focus focus:ring-2 focus:ring-primary-muted placeholder:text-foreground-subtle disabled:opacity-50';
+
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+            <div className="bg-card border border-card-border rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-scale-in flex flex-col max-h-[90vh]">
                 {/* Header */}
-                <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-slate-800">
+                <div className="p-5 border-b border-card-border flex items-center justify-between shrink-0">
+                    <h2 className="text-lg font-semibold text-foreground">
                         {isEditMode ? 'Edit Product' : 'Add New Product'}
                     </h2>
                     <button
                         onClick={onClose}
                         disabled={isLoading}
-                        className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600"
+                        className="p-2 hover:bg-background-tertiary rounded-lg transition-colors text-foreground-muted"
                         aria-label="Close"
                     >
                         <X className="w-5 h-5" />
@@ -115,122 +88,92 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                <form onSubmit={handleSubmit(onSubmit)} className="p-5 space-y-4 overflow-y-auto flex-1">
                     {/* Name */}
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Product Name <span className="text-red-500">*</span>
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-medium text-foreground-muted">
+                            Product Name <span className="text-destructive">*</span>
                         </label>
-                        <input
-                            {...register('name')}
-                            type="text"
-                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                            placeholder="Enter product name"
-                        />
-                        {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
+                        <input {...register('name')} type="text" className={inputClass} placeholder="Enter product name" />
+                        {errors.name && <p className="text-destructive text-xs">{errors.name.message}</p>}
                     </div>
 
                     {/* SKU */}
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                            SKU <span className="text-red-500">*</span>
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-medium text-foreground-muted">
+                            SKU <span className="text-destructive">*</span>
                         </label>
-                        <input
-                            {...register('sku')}
-                            type="text"
-                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                            placeholder="e.g., PROD-001"
-                        />
-                        {errors.sku && <p className="text-red-500 text-sm mt-1">{errors.sku.message}</p>}
+                        <input {...register('sku')} type="text" className={inputClass} placeholder="e.g., PROD-001" />
+                        {errors.sku && <p className="text-destructive text-xs">{errors.sku.message}</p>}
                     </div>
 
-                    {/* Price and Stock Row */}
+                    {/* Price and Stock */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                                Price ($) <span className="text-red-500">*</span>
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-medium text-foreground-muted">
+                                Price ($) <span className="text-destructive">*</span>
                             </label>
-                            <input
-                                {...register('price', { valueAsNumber: true })}
-                                type="number"
-                                step="0.01"
-                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                                placeholder="0.00"
-                            />
-                            {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price.message}</p>}
+                            <input {...register('price', { valueAsNumber: true })} type="number" step="0.01" className={inputClass} placeholder="0.00" />
+                            {errors.price && <p className="text-destructive text-xs">{errors.price.message}</p>}
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                                Stock <span className="text-red-500">*</span>
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-medium text-foreground-muted">
+                                Stock <span className="text-destructive">*</span>
                             </label>
-                            <input
-                                {...register('stock', { valueAsNumber: true })}
-                                type="number"
-                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                                placeholder="0"
-                            />
-                            {errors.stock && <p className="text-red-500 text-sm mt-1">{errors.stock.message}</p>}
+                            <input {...register('stock', { valueAsNumber: true })} type="number" className={inputClass} placeholder="0" />
+                            {errors.stock && <p className="text-destructive text-xs">{errors.stock.message}</p>}
                         </div>
                     </div>
 
                     {/* Category */}
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
-                        <input
-                            {...register('category')}
-                            type="text"
-                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                            placeholder="e.g., Electronics, Food, etc."
-                        />
-                        {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category.message}</p>}
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-medium text-foreground-muted">Category</label>
+                        <input {...register('category')} type="text" className={inputClass} placeholder="e.g., Electronics, Food, etc." />
+                        {errors.category && <p className="text-destructive text-xs">{errors.category.message}</p>}
                     </div>
 
                     {/* Description */}
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-medium text-foreground-muted">Description</label>
                         <textarea
                             {...register('description')}
                             rows={3}
-                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
+                            className="w-full p-3 bg-input-bg border border-input-border rounded-xl text-sm text-foreground outline-none transition-all focus:border-input-focus focus:ring-2 focus:ring-primary-muted resize-none placeholder:text-foreground-subtle"
                             placeholder="Product description (optional)"
                         />
-                        {errors.description && (
-                            <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>
-                        )}
+                        {errors.description && <p className="text-destructive text-xs">{errors.description.message}</p>}
                     </div>
 
                     {/* Active Toggle */}
-                    <div className="flex items-center gap-3">
+                    <label htmlFor="is_active" className="flex items-center gap-3 cursor-pointer">
                         <input
                             {...register('is_active')}
                             type="checkbox"
                             id="is_active"
-                            className="w-5 h-5 text-blue-600 border-slate-300 rounded focus:ring-2 focus:ring-blue-500"
+                            className="w-4 h-4 text-primary bg-input-bg border-input-border rounded focus:ring-2 focus:ring-primary-muted"
                         />
-                        <label htmlFor="is_active" className="text-sm font-medium text-slate-700">
-                            Product is active
-                        </label>
-                    </div>
+                        <span className="text-sm font-medium text-foreground-muted">Product is active</span>
+                    </label>
                 </form>
 
                 {/* Footer */}
-                <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
+                <div className="p-5 border-t border-card-border flex gap-3 shrink-0">
                     <button
                         type="button"
                         onClick={onClose}
                         disabled={isLoading}
-                        className="flex-1 py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                        className="flex-1 h-11 bg-background-tertiary border border-card-border text-foreground font-semibold rounded-xl hover:bg-card-hover transition-colors text-sm"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleSubmit(onSubmit)}
                         disabled={isLoading}
-                        className="flex-[2] py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 disabled:opacity-50"
+                        className="flex-[2] h-11 bg-primary text-foreground font-semibold rounded-xl hover:bg-primary-hover transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/20 text-sm disabled:opacity-50"
                     >
                         {isLoading ? (
                             <>
-                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                <Loader2 className="w-4 h-4 animate-spin" />
                                 Saving...
                             </>
                         ) : (

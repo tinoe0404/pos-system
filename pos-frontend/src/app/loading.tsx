@@ -1,13 +1,13 @@
+import { Store, Loader2 } from 'lucide-react';
+
 export default function Loading() {
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4">
-            <div className="relative">
-                <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
-                <div className="absolute inset-0 flex items-center justify-center font-bold text-xs text-blue-600">
-                    BP
-                </div>
+        <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
+            <div className="w-12 h-12 bg-primary-muted text-primary rounded-2xl flex items-center justify-center border border-card-border">
+                <Store className="w-6 h-6" />
             </div>
-            <p className="text-slate-500 font-medium animate-pulse">Loading System...</p>
+            <Loader2 className="w-7 h-7 text-primary animate-spin" />
+            <p className="text-foreground-muted text-sm font-medium">Loading...</p>
         </div>
     );
 }

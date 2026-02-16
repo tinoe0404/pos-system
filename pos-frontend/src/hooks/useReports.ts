@@ -25,6 +25,36 @@ export const useDailyReport = (date?: string) => {
 };
 
 /**
+ * Fetch today's report summary (used by dashboard for payment breakdown chart)
+ */
+interface ReportSummary {
+    paymentBreakdown: {
+        cash: number;
+        ecocash: number;
+    };
+}
+
+export const useReports = () => {
+    return useQuery<ReportSummary>({
+        queryKey: ['reports', 'summary'],
+        queryFn: async () => {
+            const today = new Date().toISOString().split('T')[0];
+            const res = await api.get<DailyReport>(`/api/reports/daily?date=${today}`);
+            const data = res.data;
+            // Derive payment breakdown from the paymentMethods map
+            const paymentMethods = data.paymentMethods || {};
+            return {
+                paymentBreakdown: {
+                    cash: (paymentMethods['CASH'] || 0) as number,
+                    ecocash: (paymentMethods['ECOCASH'] || 0) as number,
+                },
+            };
+        },
+        staleTime: 60000,
+    });
+};
+
+/**
  * Download daily report as PDF
  */
 export const downloadDailyReportPDF = async (date?: string) => {

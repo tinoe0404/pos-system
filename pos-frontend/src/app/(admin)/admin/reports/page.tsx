@@ -2,7 +2,7 @@
 
 import { useDailyReport, downloadDailyReportPDF } from '@/hooks/useReports';
 import { useState } from 'react';
-import { Download, Calendar, DollarSign, ShoppingCart, TrendingUp, Loader2 } from 'lucide-react';
+import { Download, Calendar, DollarSign, ShoppingCart, TrendingUp, Loader2, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ReportsPage() {
@@ -17,7 +17,7 @@ export default function ReportsPage() {
         try {
             await downloadDailyReportPDF(selectedDate);
             toast.success('Report downloaded successfully');
-        } catch (error) {
+        } catch {
             toast.error('Failed to download report');
         } finally {
             setIsDownloading(false);
@@ -26,8 +26,8 @@ export default function ReportsPage() {
 
     if (error) {
         return (
-            <div className="p-4 md:p-8">
-                <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
+            <div className="p-4 lg:p-6">
+                <div className="bg-destructive-muted text-destructive p-4 rounded-xl text-sm">
                     Failed to load report. Please try again.
                 </div>
             </div>
@@ -35,30 +35,26 @@ export default function ReportsPage() {
     }
 
     return (
-        <div className="p-4 md:p-8">
+        <div className="p-4 lg:p-6 space-y-5">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Daily Reports</h1>
-                    <p className="text-sm text-slate-500 mt-1">View and download daily sales reports</p>
+                    <h1 className="text-xl font-semibold text-foreground">Daily Reports</h1>
+                    <p className="text-sm text-foreground-muted mt-0.5">View and download daily sales reports</p>
                 </div>
                 <button
                     onClick={handleDownloadPDF}
                     disabled={isDownloading || isLoading}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-foreground font-semibold rounded-xl hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20 text-sm"
                 >
-                    {isDownloading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                        <Download className="w-4 h-4" />
-                    )}
-                    <span className="font-medium">Download PDF</span>
+                    {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                    <span>Download PDF</span>
                 </button>
             </div>
 
             {/* Date Selector */}
-            <div className="mb-6">
-                <label htmlFor="date" className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
+            <div className="bg-card p-4 rounded-xl border border-card-border">
+                <label htmlFor="date" className="flex items-center gap-2 text-sm font-medium text-foreground-muted mb-2">
                     <Calendar className="w-4 h-4" />
                     Select Date
                 </label>
@@ -68,97 +64,101 @@ export default function ReportsPage() {
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
                     max={new Date().toISOString().split('T')[0]}
-                    className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto"
+                    className="h-10 px-4 bg-input-bg border border-input-border rounded-lg text-sm text-foreground outline-none focus:border-input-focus focus:ring-2 focus:ring-primary-muted w-full sm:w-auto"
                 />
             </div>
 
-            {/* Loading State */}
             {isLoading ? (
-                <div className="flex items-center justify-center py-20">
-                    <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+                <div className="flex flex-col items-center justify-center py-20 gap-3">
+                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                    <p className="text-foreground-muted text-sm">Loading report...</p>
                 </div>
             ) : (
-                <div className="space-y-6">
+                <div className="space-y-5">
                     {/* Summary Cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div className="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
-                            <div className="flex items-center justify-between mb-2">
-                                <h3 className="text-sm font-medium text-slate-500">Total Sales</h3>
-                                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                                    <ShoppingCart className="w-5 h-5" />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {[
+                            { label: 'Total Sales', value: data?.totalSales || 0, sub: 'Transactions', icon: ShoppingCart, color: 'bg-primary-muted text-primary' },
+                            { label: 'Total Revenue', value: `$${data?.totalRevenue || '0.00'}`, sub: 'USD', icon: DollarSign, color: 'bg-success-muted text-success' },
+                            {
+                                label: 'Avg. Transaction',
+                                value: `$${data?.totalSales && data?.totalRevenue ? (parseFloat(data.totalRevenue) / data.totalSales).toFixed(2) : '0.00'}`,
+                                sub: 'Per sale',
+                                icon: TrendingUp,
+                                color: 'bg-warning-muted text-warning',
+                            },
+                        ].map((card) => (
+                            <div key={card.label} className="bg-card p-5 rounded-xl border border-card-border">
+                                <div className="flex items-center justify-between mb-3">
+                                    <span className="text-xs font-medium text-foreground-muted">{card.label}</span>
+                                    <div className={`p-2 rounded-lg ${card.color}`}>
+                                        <card.icon className="w-4 h-4" />
+                                    </div>
                                 </div>
+                                <p className="text-2xl font-bold text-foreground">{card.value}</p>
+                                <p className="text-[11px] text-foreground-subtle mt-1">{card.sub}</p>
                             </div>
-                            <p className="text-3xl font-bold text-slate-900">{data?.totalSales || 0}</p>
-                            <p className="text-xs text-slate-400 mt-1">Transactions</p>
-                        </div>
-
-                        <div className="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
-                            <div className="flex items-center justify-between mb-2">
-                                <h3 className="text-sm font-medium text-slate-500">Total Revenue</h3>
-                                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-                                    <DollarSign className="w-5 h-5" />
-                                </div>
-                            </div>
-                            <p className="text-3xl font-bold text-slate-900">${data?.totalRevenue || '0.00'}</p>
-                            <p className="text-xs text-slate-400 mt-1">USD</p>
-                        </div>
-
-                        <div className="p-6 bg-white rounded-xl shadow-sm border border-slate-200 sm:col-span-2 lg:col-span-1">
-                            <div className="flex items-center justify-between mb-2">
-                                <h3 className="text-sm font-medium text-slate-500">Avg. Transaction</h3>
-                                <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
-                                    <TrendingUp className="w-5 h-5" />
-                                </div>
-                            </div>
-                            <p className="text-3xl font-bold text-slate-900">
-                                ${data?.totalSales && data?.totalRevenue
-                                    ? (parseFloat(data.totalRevenue) / data.totalSales).toFixed(2)
-                                    : '0.00'}
-                            </p>
-                            <p className="text-xs text-slate-400 mt-1">Per sale</p>
-                        </div>
+                        ))}
                     </div>
 
                     {/* Top Products */}
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h2 className="text-lg font-bold text-slate-800 mb-4">Top Products</h2>
+                    <div className="bg-card p-5 rounded-xl border border-card-border">
+                        <div className="flex items-center gap-2 mb-4">
+                            <TrendingUp className="w-4 h-4 text-foreground-subtle" />
+                            <h2 className="text-sm font-semibold text-foreground">Top Products</h2>
+                        </div>
                         {data?.topProducts && data.topProducts.length > 0 ? (
-                            <div className="space-y-3">
+                            <div className="space-y-1">
                                 {data.topProducts.map((product, index) => (
-                                    <div key={index} className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
-                                        <div className="flex items-center gap-3">
-                                            <span className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-600 rounded-full text-sm font-bold">
+                                    <div key={index} className="flex items-center justify-between py-2.5 border-b border-card-border last:border-0">
+                                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                                            <span className="w-6 h-6 flex items-center justify-center bg-primary-muted text-primary rounded-md text-[11px] font-bold shrink-0">
                                                 {index + 1}
                                             </span>
-                                            <span className="font-medium text-slate-800">{product.name}</span>
+                                            <span className="font-medium text-foreground text-sm truncate">{product.name}</span>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="font-bold text-slate-900">{product.quantity} sold</p>
-                                            <p className="text-sm text-slate-500">${product.revenue}</p>
+                                        <div className="text-right shrink-0 ml-2">
+                                            <p className="text-sm font-bold text-foreground">{product.quantity} sold</p>
+                                            <p className="text-[11px] text-foreground-subtle">${product.revenue}</p>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-slate-400 text-center py-8">No sales data for this date</p>
+                            <div className="py-8 text-center">
+                                <FileText className="w-6 h-6 text-foreground-subtle mx-auto mb-2" />
+                                <p className="text-sm text-foreground-muted">No sales data for this date</p>
+                            </div>
                         )}
                     </div>
 
                     {/* Payment Methods */}
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h2 className="text-lg font-bold text-slate-800 mb-4">Payment Methods</h2>
+                    <div className="bg-card p-5 rounded-xl border border-card-border">
+                        <h2 className="text-sm font-semibold text-foreground mb-4">Payment Methods</h2>
                         {data?.paymentMethods && Object.keys(data.paymentMethods).length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                                {Object.entries(data.paymentMethods).map(([method, count]) => (
-                                    <div key={method} className="p-4 bg-slate-50 rounded-lg">
-                                        <p className="text-sm text-slate-500 mb-1">{method}</p>
-                                        <p className="text-2xl font-bold text-slate-900">{count as number}</p>
-                                        <p className="text-xs text-slate-400">transactions</p>
-                                    </div>
-                                ))}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                {Object.entries(data.paymentMethods).map(([method, count]) => {
+                                    const total = Object.values(data.paymentMethods).reduce((a, b) => a + (b as number), 0);
+                                    const pct = total > 0 ? ((count as number) / total * 100) : 0;
+                                    return (
+                                        <div key={method} className="bg-background-secondary p-4 rounded-xl border border-card-border">
+                                            <p className="text-xs text-foreground-muted mb-1">{method}</p>
+                                            <p className="text-2xl font-bold text-foreground">{count as number}</p>
+                                            <div className="mt-2 h-1.5 bg-background-tertiary rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-primary rounded-full transition-all duration-500"
+                                                    style={{ width: `${pct}%` }}
+                                                />
+                                            </div>
+                                            <p className="text-[11px] text-foreground-subtle mt-1">{pct.toFixed(0)}% of transactions</p>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         ) : (
-                            <p className="text-slate-400 text-center py-8">No payment data available</p>
+                            <div className="py-8 text-center">
+                                <p className="text-sm text-foreground-muted">No payment data available</p>
+                            </div>
                         )}
                     </div>
                 </div>

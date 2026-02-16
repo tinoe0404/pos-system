@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Beer POS System",
-  description: "Point of Sale system for beer retail",
+  title: "RetailPOS - Point of Sale System",
+  description: "Modern point of sale system for retail businesses",
 };
 
 import Providers from "./providers";

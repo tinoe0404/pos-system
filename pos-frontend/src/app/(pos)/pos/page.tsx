@@ -1,54 +1,101 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import ProductCard from '@/components/pos/ProductCard';
-import { Search, Loader2, PackageX } from 'lucide-react';
+import { Search, PackageX, Loader2 } from 'lucide-react';
 import { Product } from '@/types/product';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 export default function POSPage() {
     const { data, isLoading } = useProducts();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
+    const searchRef = useRef<HTMLInputElement>(null);
 
-    // Filter products
-    const filteredProducts = data?.products.filter((product: Product) => {
-        const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            product.sku?.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
+    const shortcuts = useMemo(
+        () => ({
+            '/': () => searchRef.current?.focus(),
+            'escape': () => {
+                setSearchQuery('');
+                searchRef.current?.blur();
+            },
+        }),
+        []
+    );
+    useKeyboardShortcuts(shortcuts);
 
-        return matchesSearch && matchesCategory;
-    }) || [];
+    const filteredProducts = useMemo(() => {
+        if (!data?.products) return [];
+        return data.products.filter((product: Product) => {
+            const matchesSearch =
+                product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                product.sku?.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesCategory =
+                selectedCategory === 'all' || product.category === selectedCategory;
+            return matchesSearch && matchesCategory;
+        });
+    }, [data?.products, searchQuery, selectedCategory]);
 
-    // Extract unique categories
-    const categories = ['all', ...Array.from(new Set(data?.products.map((p) => p.category).filter(Boolean)))];
+    const categories = useMemo(() => {
+        if (!data?.products) return ['all'];
+        const cats = Array.from(
+            new Set(data.products.map((p: Product) => p.category).filter(Boolean))
+        ) as string[];
+        return ['all', ...cats];
+    }, [data?.products]);
+
+    const getCategoryCount = useCallback(
+        (cat: string) => {
+            if (!data?.products) return 0;
+            if (cat === 'all') return data.products.length;
+            return data.products.filter((p: Product) => p.category === cat).length;
+        },
+        [data?.products]
+    );
 
     return (
-        <div className="p-6 h-full flex flex-col">
-            {/* Header / Search Bar */}
-            <div className="flex flex-col md:flex-row gap-4 mb-6 justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-100 sticky top-0 z-10">
-                <div className="relative w-full md:w-96">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+        <div className="p-4 lg:p-6 h-full flex flex-col">
+            {/* Header */}
+            <div className="flex flex-col gap-4 mb-5">
+                {/* Search Bar */}
+                <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground-subtle w-5 h-5" />
                     <input
+                        ref={searchRef}
                         type="text"
-                        placeholder="Search products..."
+                        placeholder="Search products or SKU..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="w-full h-12 pl-12 pr-16 bg-card border border-card-border rounded-xl text-foreground outline-none transition-all duration-200 placeholder:text-foreground-subtle focus:border-input-focus focus:ring-2 focus:ring-primary-muted"
                     />
+                    <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-foreground-subtle bg-background-tertiary px-2 py-1 rounded-md border border-card-border font-mono">
+                        /
+                    </kbd>
                 </div>
 
-                <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto no-scrollbar">
+                {/* Category Pills */}
+                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                     {categories.map((category) => (
                         <button
                             key={category}
-                            onClick={() => setSelectedCategory(category as string)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${selectedCategory === category
-                                    ? 'bg-blue-600 text-white shadow-md'
-                                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                                }`}
+                            onClick={() => setSelectedCategory(category)}
+                            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 ${
+                                selectedCategory === category
+                                    ? 'bg-primary text-foreground'
+                                    : 'bg-card border border-card-border text-foreground-muted hover:bg-card-hover hover:text-foreground'
+                            }`}
                         >
-                            {category === 'all' ? 'All Items' : category}
+                            <span>{category === 'all' ? 'All Items' : category}</span>
+                            <span
+                                className={`text-[11px] px-1.5 py-0.5 rounded-full ${
+                                    selectedCategory === category
+                                        ? 'bg-foreground/15 text-foreground'
+                                        : 'bg-background-tertiary text-foreground-subtle'
+                                }`}
+                            >
+                                {getCategoryCount(category)}
+                            </span>
                         </button>
                     ))}
                 </div>
@@ -56,24 +103,27 @@ export default function POSPage() {
 
             {/* Product Grid */}
             {isLoading ? (
-                <div className="flex-1 flex items-center justify-center">
-                    <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+                <div className="flex-1 flex flex-col items-center justify-center gap-3">
+                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                    <p className="text-foreground-muted text-sm">Loading products...</p>
                 </div>
             ) : filteredProducts.length > 0 ? (
-                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 overflow-y-auto pb-20">
-                    {filteredProducts.map((product) => (
-                        <div key={product.id} className="h-full">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 overflow-y-auto pb-20">
+                    {filteredProducts.map((product: Product, i: number) => (
+                        <div key={product.id} className="stagger-item h-full">
                             <ProductCard product={product} />
                         </div>
                     ))}
                 </div>
             ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-slate-400">
-                    <div className="bg-slate-100 p-6 rounded-full mb-4">
-                        <PackageX className="w-10 h-10" />
+                <div className="flex-1 flex flex-col items-center justify-center text-foreground-muted">
+                    <div className="bg-background-tertiary p-5 rounded-2xl mb-4">
+                        <PackageX className="w-8 h-8 text-foreground-subtle" />
                     </div>
-                    <p className="text-lg font-medium">No products found</p>
-                    <p className="text-sm">Try adjusting your search or category filter</p>
+                    <p className="text-base font-medium text-foreground">No products found</p>
+                    <p className="text-sm text-foreground-muted mt-1">
+                        Try adjusting your search or category filter
+                    </p>
                 </div>
             )}
         </div>

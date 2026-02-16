@@ -3,30 +3,30 @@ import { FileQuestion, Home } from 'lucide-react';
 
 export default function NotFound() {
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
             <div className="text-center space-y-6 max-w-md">
-                <div className="w-24 h-24 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <FileQuestion className="w-12 h-12" />
+                <div className="w-20 h-20 bg-background-tertiary text-foreground-subtle rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <FileQuestion className="w-10 h-10" />
                 </div>
 
-                <h1 className="text-4xl font-bold text-slate-900">Page Not Found</h1>
-                <p className="text-lg text-slate-500">
-                    The page you are looking for doesn't exist or has been moved.
+                <h1 className="text-3xl font-bold text-foreground text-balance">Page Not Found</h1>
+                <p className="text-foreground-muted leading-relaxed">
+                    The page you are looking for does not exist or has been moved.
                 </p>
 
-                <div className="pt-6">
+                <div className="pt-4">
                     <Link
                         href="/"
-                        className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 hover:scale-105"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-foreground font-semibold rounded-xl hover:bg-primary-hover transition-all shadow-lg shadow-primary/20 active:scale-[0.98]"
                     >
-                        <Home className="w-5 h-5" />
+                        <Home className="w-4 h-4" />
                         Go Back Home
                     </Link>
                 </div>
             </div>
 
-            <div className="absolute bottom-8 text-slate-400 text-sm font-medium">
-                Beer POS System
+            <div className="absolute bottom-8 text-foreground-subtle text-xs font-medium">
+                RetailPOS System
             </div>
         </div>
     );

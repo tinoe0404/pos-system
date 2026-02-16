@@ -15,29 +15,29 @@ export default function Error({
     }, [error]);
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4">
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 max-w-md w-full text-center space-y-6">
-                <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+            <div className="bg-card p-8 rounded-2xl border border-card-border max-w-md w-full text-center space-y-6 animate-scale-in">
+                <div className="w-16 h-16 bg-destructive-muted text-destructive rounded-2xl flex items-center justify-center mx-auto">
                     <AlertTriangle className="w-8 h-8" />
                 </div>
 
                 <div className="space-y-2">
-                    <h2 className="text-2xl font-bold text-slate-900">Something went wrong!</h2>
-                    <p className="text-slate-500">
-                        We encountered an unexpected error. Our team has been notified.
+                    <h2 className="text-xl font-bold text-foreground text-balance">Something went wrong</h2>
+                    <p className="text-foreground-muted text-sm leading-relaxed">
+                        We encountered an unexpected error. Please try again.
                     </p>
                 </div>
 
                 <div className="flex gap-3 justify-center">
                     <button
                         onClick={() => window.location.reload()}
-                        className="px-6 py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                        className="px-5 py-2.5 bg-background-tertiary border border-card-border text-foreground font-semibold rounded-xl hover:bg-card-hover transition-colors text-sm"
                     >
                         Reload Page
                     </button>
                     <button
                         onClick={reset}
-                        className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2"
+                        className="px-5 py-2.5 bg-primary text-foreground font-semibold rounded-xl hover:bg-primary-hover transition-colors flex items-center gap-2 shadow-lg shadow-primary/20 text-sm"
                     >
                         <RotateCcw className="w-4 h-4" />
                         Try Again
@@ -45,7 +45,7 @@ export default function Error({
                 </div>
 
                 {process.env.NODE_ENV === 'development' && (
-                    <div className="mt-6 p-4 bg-slate-50 rounded-lg text-left overflow-auto max-h-48 text-xs font-mono text-slate-600">
+                    <div className="mt-4 p-3 bg-background-secondary rounded-lg text-left overflow-auto max-h-48 text-xs font-mono text-foreground-muted border border-card-border">
                         {error.message}
                     </div>
                 )}

@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import { LayoutGrid, ClipboardList, Settings, LogOut } from 'lucide-react';
+import { LayoutGrid, ClipboardList, Settings, LogOut, Store } from 'lucide-react';
 
 export default function Sidebar() {
     const router = useRouter();
@@ -21,36 +21,53 @@ export default function Sidebar() {
     ];
 
     return (
-        <aside className="w-20 bg-white border-r border-slate-200 flex flex-col items-center py-6 h-screen sticky top-0">
-            <div className="mb-8 p-3 bg-blue-50 text-blue-600 rounded-xl">
-                <span className="font-bold text-lg">BP</span>
+        <aside className="w-[72px] bg-card border-r border-card-border flex flex-col items-center py-5 h-screen sticky top-0 shrink-0">
+            {/* Brand Logo */}
+            <div className="mb-6 w-11 h-11 bg-primary-muted text-primary rounded-xl flex items-center justify-center border border-card-border">
+                <Store className="w-5 h-5" />
             </div>
 
-            <nav className="flex-1 flex flex-col gap-4 w-full px-2">
+            {/* Navigation */}
+            <nav className="flex-1 flex flex-col gap-1.5 w-full px-2">
                 {navItems.map((item) => {
                     const isActive = pathname === item.href;
                     return (
                         <button
                             key={item.href}
                             onClick={() => router.push(item.href)}
-                            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all ${isActive
-                                ? 'bg-blue-600 text-white shadow-md'
-                                : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
-                                }`}
+                            title={item.label}
+                            className={`relative flex flex-col items-center justify-center p-2.5 rounded-xl transition-all duration-200 group ${
+                                isActive
+                                    ? 'bg-primary text-foreground shadow-lg shadow-primary/20'
+                                    : 'text-foreground-muted hover:bg-background-tertiary hover:text-foreground'
+                            }`}
                         >
-                            <item.icon className="w-6 h-6" />
-                            <span className="text-[10px] mt-1 font-medium">{item.label}</span>
+                            {/* Active indicator */}
+                            {isActive && (
+                                <span className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-1 h-5 bg-primary rounded-full" />
+                            )}
+                            <item.icon className="w-5 h-5" />
+                            <span className="text-[10px] mt-1 font-medium leading-none">{item.label}</span>
+
+                            {/* Tooltip */}
+                            <span className="absolute left-full ml-3 px-2.5 py-1.5 bg-background-tertiary text-foreground text-xs font-medium rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap border border-card-border z-50">
+                                {item.label}
+                            </span>
                         </button>
                     );
                 })}
             </nav>
 
+            {/* Logout */}
             <button
                 onClick={handleLogout}
-                className="mt-auto p-3 text-slate-400 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all"
+                className="mt-auto p-2.5 text-foreground-muted hover:bg-destructive-muted hover:text-destructive rounded-xl transition-all duration-200 group relative"
                 title="Logout"
             >
-                <LogOut className="w-6 h-6" />
+                <LogOut className="w-5 h-5" />
+                <span className="absolute left-full ml-3 px-2.5 py-1.5 bg-background-tertiary text-foreground text-xs font-medium rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap border border-card-border z-50">
+                    Logout
+                </span>
             </button>
         </aside>
     );
