@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { Product } from '@/types/product';
 import { useCartStore } from '@/store/useCartStore';
-import { Plus } from 'lucide-react';
+import { Plus, Package } from 'lucide-react';
 
 interface ProductCardProps {
     product: Product;
@@ -10,50 +11,88 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
     const addItem = useCartStore((state) => state.addItem);
+    const [justAdded, setJustAdded] = useState(false);
+
+    const isOutOfStock = product.stock <= 0;
+    const isLowStock = product.stock > 0 && product.stock <= 5;
+
+    const handleAdd = () => {
+        if (isOutOfStock) return;
+        addItem(product);
+        setJustAdded(true);
+        setTimeout(() => setJustAdded(false), 400);
+    };
 
     return (
         <button
-            onClick={() => addItem(product)}
-            className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex flex-col items-start text-left hover:shadow-md hover:border-blue-200 transition-all group h-full w-full"
+            onClick={handleAdd}
+            disabled={isOutOfStock}
+            className={`relative bg-card rounded-xl border border-card-border p-4 flex flex-col items-start text-left transition-all duration-200 group h-full w-full ${
+                isOutOfStock
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:border-border-hover hover:bg-card-hover active:scale-[0.98] cursor-pointer'
+            } ${justAdded ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
         >
-            <div className="w-full aspect-square bg-slate-50 rounded-lg mb-3 flex items-center justify-center text-slate-300 relative overflow-hidden">
-                {/* Image placeholder or real image */}
+            {/* Image / Placeholder */}
+            <div className="w-full aspect-square bg-background-secondary rounded-lg mb-3 flex items-center justify-center relative overflow-hidden">
                 {product.imageUrl ? (
-                    <img src={product.imageUrl} alt={product.name} className="object-cover w-full h-full" />
+                    <img
+                        src={product.imageUrl}
+                        alt={product.name}
+                        className="object-cover w-full h-full"
+                    />
                 ) : (
-                    <div className="text-4xl font-bold text-slate-200 select-none">
-                        {product.name.charAt(0)}
+                    <div className="flex flex-col items-center gap-1">
+                        <Package className="w-8 h-8 text-foreground-subtle" />
+                        <span className="text-2xl font-bold text-foreground-subtle select-none">
+                            {product.name.charAt(0)}
+                        </span>
                     </div>
                 )}
 
-                {/* Add overlay on hover */}
-                <div className="absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/5 transition-colors flex items-center justify-center">
-                    <div className="bg-blue-600 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all shadow-lg">
-                        <Plus className="w-6 h-6" />
+                {/* Add overlay */}
+                {!isOutOfStock && (
+                    <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors flex items-center justify-center">
+                        <div className="bg-primary text-foreground rounded-full p-2 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all">
+                            <Plus className="w-5 h-5" />
+                        </div>
                     </div>
-                </div>
+                )}
+
+                {/* Out of stock badge */}
+                {isOutOfStock && (
+                    <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
+                        <span className="text-xs font-semibold text-destructive bg-destructive-muted px-3 py-1.5 rounded-full">
+                            Out of Stock
+                        </span>
+                    </div>
+                )}
             </div>
 
+            {/* Info */}
             <div className="flex-1 w-full flex flex-col justify-between">
                 <div>
-                    <h3 className="font-bold text-slate-800 line-clamp-2 leading-snug mb-1">
+                    <h3 className="font-semibold text-foreground line-clamp-2 leading-snug text-sm mb-1">
                         {product.name}
                     </h3>
-                    <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mb-2">
+                    <p className="text-[11px] text-foreground-subtle font-medium uppercase tracking-wider">
                         {product.category || 'General'}
                     </p>
                 </div>
 
-                <div className="w-full flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
-                    <span className="text-lg font-bold text-blue-600">
+                <div className="w-full flex items-center justify-between mt-3 pt-3 border-t border-card-border">
+                    <span className="text-base font-bold text-primary">
                         ${Number(product.price).toFixed(2)}
                     </span>
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${product.stock > 0
-                            ? 'bg-emerald-50 text-emerald-600'
-                            : 'bg-red-50 text-red-600'
-                        }`}>
-                        {product.stock > 0 ? `${product.stock} in stock` : 'Out of Stock'}
-                    </span>
+                    {isLowStock ? (
+                        <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-warning-muted text-warning">
+                            {product.stock} left
+                        </span>
+                    ) : !isOutOfStock ? (
+                        <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-success-muted text-success">
+                            In stock
+                        </span>
+                    ) : null}
                 </div>
             </div>
         </button>
