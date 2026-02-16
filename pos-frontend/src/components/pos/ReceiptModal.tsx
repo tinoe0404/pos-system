@@ -174,7 +174,8 @@ export default function ReceiptModal({ isOpen, onClose, order, autoPrint = false
             </div>
 
             {/* Print Styles */}
-            <style jsx global>{`
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 @media print {
                     body * { visibility: hidden; }
                     div:has(> #receipt-content), #receipt-content, #receipt-content * { visibility: visible; }
@@ -183,7 +184,7 @@ export default function ReceiptModal({ isOpen, onClose, order, autoPrint = false
                     #receipt-content { width: 100%; font-family: 'Courier New', monospace !important; font-size: 11px !important; color: #000 !important; background: white !important; }
                     #receipt-content * { color: #000 !important; background: transparent !important; border-color: #000 !important; box-shadow: none !important; border-radius: 0 !important; }
                 }
-            `}</style>
+            ` }} />
         </div>
     );
 }
