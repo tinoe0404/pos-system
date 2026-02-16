@@ -9,7 +9,7 @@ async function check() {
         } else {
             console.error('❌ Backend returned status:', res.status);
         }
-    } catch (error) {
+    } catch (error: any) {
         console.error('❌ Backend check failed:', error.message);
         if (error.cause) {
             console.error('Cause:', error.cause);

@@ -1,16 +1,12 @@
 import { Queue, Worker, Job } from 'bullmq';
 import { PrismaClient } from '@prisma/client';
-import redis from './redis';
+import redis, { getRedisConnectionConfig } from './redis';
 
 const prisma = new PrismaClient();
 
 // Queue configuration
 export const salesQueue = new Queue('sales-queue', {
-  connection: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379', 10),
-    password: process.env.REDIS_PASSWORD || undefined,
-  },
+  connection: getRedisConnectionConfig(),
   defaultJobOptions: {
     attempts: 3,
     backoff: {
@@ -131,12 +127,8 @@ export const salesWorker = new Worker<StockDeductionJobData>(
   'sales-queue',
   processStockDeduction,
   {
-    connection: {
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379', 10),
-      password: process.env.REDIS_PASSWORD || undefined,
-    },
-    concurrency: 5, // Process up to 5 jobs concurrently
+    connection: getRedisConnectionConfig(),
+    concurrency: 1, // Single cashier — no concurrency needed
   }
 );
 

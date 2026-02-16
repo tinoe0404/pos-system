@@ -33,7 +33,7 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
         formState: { errors },
         reset,
     } = useForm<ProductFormData>({
-        resolver: zodResolver(productFormSchema),
+        resolver: zodResolver(productFormSchema) as any,
         defaultValues: {
             name: '', description: '', price: 0, stock: 0, sku: '', category: '', is_active: true,
         },

@@ -42,17 +42,24 @@ export async function buildApp() {
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
 
-  // Register CORS - Allow all origins for development
+  // Register CORS
   await app.register(cors, {
     origin: (origin, cb) => {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return cb(null, true);
-      // Allow localhost requests
+
+      // Always allow localhost in development
       if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
         return cb(null, true);
       }
-      // Error out others
-      cb(new Error("Not allowed by CORS"), false);
+
+      // Check against configured production origins
+      const allowedOrigins = (process.env.CORS_ORIGIN || '').split(',').map(o => o.trim()).filter(Boolean);
+      if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+        return cb(null, true);
+      }
+
+      cb(new Error('Not allowed by CORS'), false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -84,7 +91,7 @@ export async function buildApp() {
       },
       servers: [
         {
-          url: 'http://localhost:3000',
+          url: process.env.API_URL || `http://localhost:${process.env.PORT || 3000}`,
         },
       ],
       components: {
