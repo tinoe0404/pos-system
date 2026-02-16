@@ -6,7 +6,7 @@
         "pos-frontend"
     ],
     "scripts": {
-        "build": "echo 'Building root...'",
-        "start": "echo 'Starting root...'"
+        "build": "npm run build --workspace=pos-backend",
+        "start": "npm run start:prod --workspace=pos-backend"
     }
 }
