@@ -7,6 +7,7 @@ import {
     Pause, Play, Percent, StickyNote, X
 } from 'lucide-react';
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { useCreateOrder } from '@/hooks/useCreateOrder';
 import { toast } from 'sonner';
 import PaymentModal from './PaymentModal';
@@ -219,15 +220,17 @@ export default function CartPanel({ onCheckoutComplete }: CartPanelProps) {
                             <p className="text-xs text-foreground-subtle">Add products to start an order</p>
                         </div>
                     ) : (
-                        items.map((item) => (
-                            <CartItemRow
-                                key={item.id}
-                                item={item}
-                                onUpdateQuantity={updateQuantity}
-                                onRemove={removeItem}
-                                disabled={isPending}
-                            />
-                        ))
+                        <AnimatePresence mode="popLayout">
+                            {items.map((item) => (
+                                <CartItemRow
+                                    key={item.id}
+                                    item={item}
+                                    onUpdateQuantity={updateQuantity}
+                                    onRemove={removeItem}
+                                    disabled={isPending}
+                                />
+                            ))}
+                        </AnimatePresence>
                     )}
                 </div>
 
@@ -351,45 +354,72 @@ interface CartItemRowProps {
 }
 
 function CartItemRow({ item, onUpdateQuantity, onRemove, disabled }: CartItemRowProps) {
+
     return (
-        <div className="bg-background-secondary p-3 rounded-xl border border-card-border flex gap-3 group hover:border-border-hover transition-colors animate-fade-in">
-            <div className="w-12 h-12 bg-background-tertiary rounded-lg shrink-0 flex items-center justify-center font-bold text-foreground-subtle text-sm">
-                {item.name.charAt(0)}
+        <motion.div
+            layout
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -100, height: 0, marginBottom: 0, overflow: 'hidden' }}
+            transition={{ duration: 0.2 }}
+            className="relative overflow-hidden rounded-xl"
+        >
+            {/* Delete background revealed on swipe */}
+            <div className="absolute inset-0 bg-destructive rounded-xl flex items-center justify-end pr-5">
+                <Trash2 className="w-5 h-5 text-white" />
             </div>
-            <div className="flex-1 flex flex-col justify-between min-w-0">
-                <div className="flex justify-between items-start gap-2">
-                    <h4 className="font-medium text-foreground text-sm truncate">{item.name}</h4>
-                    <button
-                        onClick={() => onRemove(item.id)}
-                        disabled={disabled}
-                        className="text-foreground-subtle hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 shrink-0"
-                    >
-                        <X className="w-3.5 h-3.5" />
-                    </button>
+
+            {/* Swipeable card */}
+            <motion.div
+                drag="x"
+                dragDirectionLock
+                dragConstraints={{ left: -120, right: 0 }}
+                dragElastic={0.1}
+                onDragEnd={(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+                    if (info.offset.x < -80) {
+                        onRemove(item.id);
+                    }
+                }}
+                className="relative bg-background-secondary p-3 rounded-xl border border-card-border flex gap-3 group hover:border-border-hover transition-colors cursor-grab active:cursor-grabbing touch-pan-y"
+            >
+                <div className="w-12 h-12 bg-background-tertiary rounded-lg shrink-0 flex items-center justify-center font-bold text-foreground-subtle text-sm">
+                    {item.name.charAt(0)}
                 </div>
-                <div className="flex justify-between items-center mt-1">
-                    <span className="text-primary font-semibold text-sm">
-                        ${(Number(item.price) * item.quantity).toFixed(2)}
-                    </span>
-                    <div className="flex items-center gap-2 bg-background-tertiary rounded-lg p-0.5">
+                <div className="flex-1 flex flex-col justify-between min-w-0">
+                    <div className="flex justify-between items-start gap-2">
+                        <h4 className="font-medium text-foreground text-sm truncate">{item.name}</h4>
                         <button
-                            onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-                            className="w-6 h-6 flex items-center justify-center bg-card rounded text-foreground-muted hover:text-foreground disabled:opacity-40 transition-colors"
-                            disabled={item.quantity <= 1 || disabled}
-                        >
-                            <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="text-xs font-bold text-foreground w-4 text-center">{item.quantity}</span>
-                        <button
-                            onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                            className="w-6 h-6 flex items-center justify-center bg-card rounded text-foreground-muted hover:text-foreground disabled:opacity-40 transition-colors"
+                            onClick={() => onRemove(item.id)}
                             disabled={disabled}
+                            className="text-foreground-subtle hover:text-destructive transition-colors md:opacity-0 md:group-hover:opacity-100 shrink-0 p-1"
                         >
-                            <Plus className="w-3 h-3" />
+                            <X className="w-4 h-4" />
                         </button>
                     </div>
+                    <div className="flex justify-between items-center mt-1">
+                        <span className="text-primary font-semibold text-sm">
+                            ${(Number(item.price) * item.quantity).toFixed(2)}
+                        </span>
+                        <div className="flex items-center gap-1 bg-background-tertiary rounded-lg p-0.5">
+                            <button
+                                onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                                className="w-8 h-8 flex items-center justify-center bg-card rounded-md text-foreground-muted hover:text-foreground disabled:opacity-40 transition-colors active:scale-90"
+                                disabled={item.quantity <= 1 || disabled}
+                            >
+                                <Minus className="w-3.5 h-3.5" />
+                            </button>
+                            <span className="text-sm font-bold text-foreground w-6 text-center">{item.quantity}</span>
+                            <button
+                                onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                                className="w-8 h-8 flex items-center justify-center bg-card rounded-md text-foreground-muted hover:text-foreground disabled:opacity-40 transition-colors active:scale-90"
+                                disabled={disabled}
+                            >
+                                <Plus className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
     );
 }

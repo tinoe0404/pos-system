@@ -131,3 +131,28 @@ export async function getTodaySalesHandler(
     });
   }
 }
+
+export async function getPublicReceiptHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  try {
+    const { id } = request.params as { id: string };
+    const sale = await salesService.getSaleById(id);
+
+    if (!sale) {
+      return reply.code(404).send({
+        error: 'Not found',
+        message: 'Receipt not found',
+      });
+    }
+
+    return reply.code(200).send(sale);
+  } catch (error) {
+    request.log.error(error);
+    return reply.code(500).send({
+      error: 'Internal server error',
+      message: 'Failed to fetch receipt',
+    });
+  }
+}

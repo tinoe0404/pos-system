@@ -1,0 +1,18 @@
+{
+    "name": "RetailPOS",
+    "short_name": "RetailPOS",
+    "description": "Mobile-first Point of Sale system",
+    "start_url": "/pos",
+    "display": "standalone",
+    "background_color": "#0a0a0f",
+    "theme_color": "#6366f1",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/icons/icon-192.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}

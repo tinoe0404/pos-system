@@ -7,12 +7,14 @@ import {
   saleDetailResponseSchema,
   salesListResponseSchema,
   salesPaginationSchema,
+  publicReceiptResponseSchema,
 } from './sales.schema';
 import {
   createSaleHandler,
   getSaleByIdHandler,
   getAllSalesHandler,
   getTodaySalesHandler,
+  getPublicReceiptHandler,
 } from './sales.controller';
 import { authenticate } from '../auth/auth.middleware';
 
@@ -79,6 +81,22 @@ async function salesRoutes(app: FastifyInstance) {
       },
     },
     getSaleByIdHandler
+  );
+
+  // GET /api/sales/:id/receipt - Public receipt details (No Auth required)
+  server.get(
+    '/:id/receipt',
+    {
+      schema: {
+        params: z.object({
+          id: z.string(),
+        }),
+        response: {
+          200: publicReceiptResponseSchema,
+        },
+      },
+    },
+    getPublicReceiptHandler
   );
 }
 

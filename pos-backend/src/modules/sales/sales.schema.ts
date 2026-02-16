@@ -73,6 +73,29 @@ export const saleDetailResponseSchema = z.object({
   user: userInfoSchema,
 });
 
+// Minimal public receipt schema (no user role/id details needed, just store info if we had it)
+export const publicReceiptResponseSchema = z.object({
+  id: z.string(),
+  total: z.string(),
+  status: z.enum(['PENDING', 'COMPLETED', 'FAILED']),
+  payment_method: z.enum(['CASH', 'ECOCASH']),
+  created_at: z.union([z.date(), z.string()]),
+  items: z.array(
+    z.object({
+      id: z.string(),
+      quantity: z.number(),
+      price_at_sale: z.string(),
+      product: z.object({
+        name: z.string(),
+        sku: z.string(),
+      }),
+    })
+  ),
+  user: z.object({
+    username: z.string(), // Only show cashier name
+  }),
+});
+
 export const salesListResponseSchema = z.object({
   sales: z.array(saleResponseSchema),
   count: z.number(),

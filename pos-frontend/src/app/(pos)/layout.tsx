@@ -14,7 +14,9 @@ export default function POSLayout({ children }: { children: React.ReactNode }) {
     const [isClient, setIsClient] = useState(false);
     const [mobileCartOpen, setMobileCartOpen] = useState(false);
     const items = useCartStore((state) => state.items);
+    const getTotal = useCartStore((state) => state.getTotal);
     const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+    const cartTotal = getTotal();
 
     useEffect(() => {
         setIsClient(true);
@@ -51,18 +53,23 @@ export default function POSLayout({ children }: { children: React.ReactNode }) {
                 <CartPanel />
             </div>
 
-            {/* Mobile Bottom Bar */}
+            {/* Mobile Bottom Bar - Enhanced FAB */}
             <div className="fixed bottom-0 left-0 right-0 md:hidden z-40">
                 <div className="glass border-t border-card-border px-4 py-3 flex items-center justify-between">
                     <MobileNav />
                     <button
                         onClick={() => setMobileCartOpen(true)}
-                        className="relative bg-primary text-foreground px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 active:scale-[0.97] transition-transform"
+                        className={`relative bg-primary text-foreground rounded-xl font-semibold text-sm flex items-center gap-2 active:scale-[0.95] transition-all shadow-lg shadow-primary/25 ${itemCount > 0 ? 'px-5 py-3' : 'px-4 py-2.5'
+                            }`}
                     >
-                        <ShoppingCart className="w-4 h-4" />
-                        Cart
+                        <ShoppingCart className="w-5 h-5" />
+                        {itemCount > 0 ? (
+                            <span>Cart · ${cartTotal.toFixed(2)}</span>
+                        ) : (
+                            <span>Cart</span>
+                        )}
                         {itemCount > 0 && (
-                            <span className="absolute -top-2 -right-2 w-5 h-5 bg-destructive text-foreground text-[11px] rounded-full flex items-center justify-center font-bold">
+                            <span className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-foreground text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
                                 {itemCount}
                             </span>
                         )}
@@ -116,8 +123,8 @@ function MobileNav() {
                         key={item.href}
                         onClick={() => router.push(item.href)}
                         className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
-                                ? 'text-foreground bg-background-tertiary'
-                                : 'text-foreground-muted'
+                            ? 'text-foreground bg-background-tertiary'
+                            : 'text-foreground-muted'
                             }`}
                     >
                         <item.icon className="w-4 h-4" />

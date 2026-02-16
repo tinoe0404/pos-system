@@ -2,6 +2,7 @@
 
 import { X, Printer, CheckCircle2, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import QRCode from 'react-qr-code';
 import { CartItem } from '@/store/useCartStore';
 
 interface ReceiptModalProps {
@@ -119,6 +120,27 @@ export default function ReceiptModal({ isOpen, onClose, order, autoPrint = false
                     </div>
 
                     <div className="border-b border-dashed border-card-border my-3 print:border-black" />
+
+                    {/* QR Code */}
+                    <div className="flex flex-col items-center justify-center my-4 print:my-4">
+                        {typeof window !== 'undefined' && order && (
+                            <div className="bg-white p-2 rounded-lg">
+                                {/* Cast to any to avoid React 19 type issues */}
+                                {(() => {
+                                    const QRCodeComponent = QRCode as any;
+                                    return (
+                                        <QRCodeComponent
+                                            value={`${window.location.origin}/receipt/${order.id}`}
+                                            size={100}
+                                            style={{ height: "auto", maxWidth: "100%", width: "100px" }}
+                                            viewBox={`0 0 256 256`}
+                                        />
+                                    );
+                                })()}
+                            </div>
+                        )}
+                        <p className="text-[10px] text-foreground-muted print:text-black mt-1">Scan for Digital Receipt</p>
+                    </div>
 
                     <div className="text-center text-[11px] text-foreground-muted space-y-1 print:text-black">
                         <p className="font-semibold">Thank you for your purchase!</p>

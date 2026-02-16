@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -10,10 +10,25 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "RetailPOS - Point of Sale System",
   description: "Modern point of sale system for retail businesses",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "RetailPOS",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#6366f1",
 };
 
 import Providers from "./providers";
 import { Toaster } from "sonner";
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 
 export default function RootLayout({
   children,
@@ -22,12 +37,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
+      </head>
       <body
         className={`${inter.variable} antialiased`}
       >
         <Providers>
           {children}
           <Toaster position="top-center" richColors />
+          <ServiceWorkerRegistration />
         </Providers>
       </body>
     </html>
