@@ -29,7 +29,6 @@ export const useSales = () => {
         queryFn: async () => {
             // Use /sales/today endpoint for better performance
             const { data } = await api.get<any>('/api/sales/today');
-            console.log('UseSales Raw API Data:', data); // Debugging log
             // Transform snake_case API response to camelCase interface
             const transformedSales: Sale[] = data.sales.map((sale: any) => ({
                 id: sale.id,

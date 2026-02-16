@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import { useDeleteProduct } from '@/hooks/useProductMutations';
 import ProductModal from '@/components/admin/ProductModal';
-import { Search, Plus, Edit, Trash2, Package, AlertCircle, Loader2 } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Package, AlertCircle, Loader2, PackageX } from 'lucide-react';
 
 export default function InventoryPage() {
     const { data: productsData, isLoading } = useProducts();
@@ -14,10 +14,8 @@ export default function InventoryPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
-    // Client-side search filter
     const filteredProducts = useMemo(() => {
         if (!productsData?.products) return [];
-
         const query = searchQuery.toLowerCase();
         return productsData.products.filter((product) =>
             product.name.toLowerCase().includes(query) ||
@@ -43,181 +41,150 @@ export default function InventoryPage() {
     };
 
     return (
-        <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+        <div className="p-4 lg:p-6 space-y-5">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h2 className="text-xl md:text-2xl font-bold text-slate-800">Inventory Management</h2>
-                    <p className="text-sm text-slate-500">Manage your products and stock levels</p>
+                    <h2 className="text-xl font-semibold text-foreground">Inventory Management</h2>
+                    <p className="text-sm text-foreground-muted mt-0.5">Manage your products and stock levels</p>
                 </div>
                 <button
                     onClick={handleAddProduct}
-                    className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-foreground font-semibold rounded-xl hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20 text-sm"
                 >
-                    <Plus className="w-5 h-5" />
+                    <Plus className="w-4 h-4" />
                     <span>Add Product</span>
                 </button>
             </div>
 
-            {/* Search Bar */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search by name, SKU, or category..."
-                        className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                    />
-                </div>
+            {/* Search */}
+            <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-subtle" />
+                <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by name, SKU, or category..."
+                    className="w-full h-11 pl-11 pr-4 bg-card border border-card-border rounded-xl text-sm text-foreground outline-none transition-all focus:border-input-focus focus:ring-2 focus:ring-primary-muted placeholder:text-foreground-subtle"
+                />
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-3 bg-blue-50 rounded-lg">
-                            <Package className="w-6 h-6 text-blue-600" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                    {
+                        label: 'Total Products',
+                        value: productsData?.count || 0,
+                        icon: Package,
+                        color: 'bg-primary-muted text-primary',
+                    },
+                    {
+                        label: 'Active',
+                        value: productsData?.products.filter((p) => p.active).length || 0,
+                        icon: Package,
+                        color: 'bg-success-muted text-success',
+                    },
+                    {
+                        label: 'Low Stock',
+                        value: productsData?.products.filter((p) => p.stock < 10).length || 0,
+                        icon: AlertCircle,
+                        color: 'bg-warning-muted text-warning',
+                    },
+                ].map((stat) => (
+                    <div key={stat.label} className="bg-card p-4 rounded-xl border border-card-border flex items-center gap-3">
+                        <div className={`p-2.5 rounded-lg ${stat.color}`}>
+                            <stat.icon className="w-4 h-4" />
                         </div>
                         <div>
-                            <p className="text-sm text-slate-500">Total Products</p>
-                            <p className="text-2xl font-bold text-slate-900">{productsData?.count || 0}</p>
+                            <p className="text-[11px] text-foreground-muted font-medium">{stat.label}</p>
+                            <p className="text-xl font-bold text-foreground">{stat.value}</p>
                         </div>
                     </div>
-                </div>
-                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-3 bg-emerald-50 rounded-lg">
-                            <Package className="w-6 h-6 text-emerald-600" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-slate-500">Active Products</p>
-                            <p className="text-2xl font-bold text-slate-900">
-                                {productsData?.products.filter((p) => p.active).length || 0}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-3 bg-orange-50 rounded-lg">
-                            <AlertCircle className="w-6 h-6 text-orange-600" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-slate-500">Low Stock</p>
-                            <p className="text-2xl font-bold text-slate-900">
-                                {productsData?.products.filter((p) => p.stock < 10).length || 0}
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                ))}
             </div>
 
-            {/* Products Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+            {/* Table */}
+            <div className="bg-card rounded-xl border border-card-border overflow-hidden">
                 {isLoading ? (
-                    <div className="flex items-center justify-center py-20">
-                        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                    <div className="flex flex-col items-center justify-center py-20 gap-3">
+                        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                        <p className="text-foreground-muted text-sm">Loading products...</p>
                     </div>
                 ) : filteredProducts.length === 0 ? (
-                    <div className="text-center py-20">
-                        <Package className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                        <p className="text-slate-500">
-                            {searchQuery ? 'No products found matching your search' : 'No products yet. Add your first product!'}
+                    <div className="flex flex-col items-center justify-center py-20 gap-3">
+                        <div className="bg-background-tertiary p-5 rounded-2xl">
+                            <PackageX className="w-8 h-8 text-foreground-subtle" />
+                        </div>
+                        <p className="text-foreground font-medium">
+                            {searchQuery ? 'No products found' : 'No products yet'}
+                        </p>
+                        <p className="text-sm text-foreground-muted">
+                            {searchQuery ? 'Try adjusting your search' : 'Add your first product to get started'}
                         </p>
                     </div>
                 ) : (
-                    <div>
-                        {/* Mobile scroll hint */}
-                        <div className="md:hidden px-4 py-2 bg-blue-50 text-blue-700 text-xs text-center border-b border-blue-100">
-                            ← Scroll horizontally to see all columns →
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead className="bg-slate-50 border-b border-slate-200">
+                    <>
+                        {/* Desktop Table */}
+                        <div className="hidden md:block overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-background-secondary border-b border-card-border">
                                     <tr>
-                                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">
-                                            Product
-                                        </th>
-                                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">
-                                            SKU
-                                        </th>
-                                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">
-                                            Category
-                                        </th>
-                                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">
-                                            Price
-                                        </th>
-                                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">
-                                            Stock
-                                        </th>
-                                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">
-                                            Status
-                                        </th>
-                                        <th className="px-4 md:px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">
-                                            Actions
-                                        </th>
+                                        {['Product', 'SKU', 'Category', 'Price', 'Stock', 'Status', 'Actions'].map((h) => (
+                                            <th key={h} className={`px-5 py-3 text-[11px] font-semibold text-foreground-subtle uppercase tracking-wider ${h === 'Actions' ? 'text-right' : ''}`}>
+                                                {h}
+                                            </th>
+                                        ))}
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-200">
+                                <tbody className="divide-y divide-card-border">
                                     {filteredProducts.map((product) => (
-                                        <tr key={product.id} className="hover:bg-slate-50 transition-colors">
-                                            <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                                        <tr key={product.id} className="hover:bg-card-hover transition-colors">
+                                            <td className="px-5 py-3.5">
                                                 <div>
-                                                    <p className="font-medium text-slate-900">{product.name}</p>
+                                                    <p className="font-medium text-foreground text-sm">{product.name}</p>
                                                     {product.description && (
-                                                        <p className="text-sm text-slate-500 line-clamp-1 max-w-xs">
-                                                            {product.description}
-                                                        </p>
+                                                        <p className="text-xs text-foreground-subtle line-clamp-1 max-w-xs">{product.description}</p>
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="px-4 md:px-6 py-4 whitespace-nowrap">
-                                                <span className="font-mono text-sm text-slate-600">{product.sku}</span>
+                                            <td className="px-5 py-3.5">
+                                                <span className="font-mono text-sm text-foreground-muted">{product.sku}</span>
                                             </td>
-                                            <td className="px-4 md:px-6 py-4 whitespace-nowrap">
-                                                <span className="text-sm text-slate-600">
-                                                    {product.category || '-'}
-                                                </span>
+                                            <td className="px-5 py-3.5">
+                                                <span className="text-sm text-foreground-muted">{product.category || '-'}</span>
                                             </td>
-                                            <td className="px-4 md:px-6 py-4 whitespace-nowrap">
-                                                <span className="font-medium text-slate-900">
-                                                    ${Number(product.price).toFixed(2)}
-                                                </span>
+                                            <td className="px-5 py-3.5">
+                                                <span className="font-bold text-foreground text-sm">${Number(product.price).toFixed(2)}</span>
                                             </td>
-                                            <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                                            <td className="px-5 py-3.5">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-medium text-slate-900">{product.stock}</span>
-                                                    {product.stock < 10 && (
-                                                        <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-medium rounded">
-                                                            Low
-                                                        </span>
-                                                    )}
+                                                    <span className="font-medium text-foreground text-sm">{product.stock}</span>
+                                                    {product.stock === 0 ? (
+                                                        <span className="px-1.5 py-0.5 bg-destructive-muted text-destructive text-[10px] font-medium rounded-full">Out</span>
+                                                    ) : product.stock < 10 ? (
+                                                        <span className="px-1.5 py-0.5 bg-warning-muted text-warning text-[10px] font-medium rounded-full">Low</span>
+                                                    ) : null}
                                                 </div>
                                             </td>
-                                            <td className="px-4 md:px-6 py-4 whitespace-nowrap">
-                                                <span
-                                                    className={`px-2 py-1 text-xs font-medium rounded ${product.active
-                                                        ? 'bg-emerald-100 text-emerald-700'
-                                                        : 'bg-slate-100 text-slate-600'
-                                                        }`}
-                                                >
+                                            <td className="px-5 py-3.5">
+                                                <span className={`px-2 py-0.5 text-[11px] font-medium rounded-full ${
+                                                    product.active ? 'bg-success-muted text-success' : 'bg-background-tertiary text-foreground-subtle'
+                                                }`}>
                                                     {product.active ? 'Active' : 'Inactive'}
                                                 </span>
                                             </td>
-                                            <td className="px-4 md:px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center justify-end gap-2">
+                                            <td className="px-5 py-3.5">
+                                                <div className="flex items-center justify-end gap-1">
                                                     <button
                                                         onClick={() => handleEditProduct(product)}
-                                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                        className="p-2 text-foreground-subtle hover:text-primary hover:bg-primary-muted rounded-lg transition-colors"
                                                         title="Edit product"
                                                     >
                                                         <Edit className="w-4 h-4" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteProduct(product.id, product.name)}
-                                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                        className="p-2 text-foreground-subtle hover:text-destructive hover:bg-destructive-muted rounded-lg transition-colors"
                                                         title="Delete product"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
@@ -229,17 +196,55 @@ export default function InventoryPage() {
                                 </tbody>
                             </table>
                         </div>
-                    </div>
+
+                        {/* Mobile Card Layout */}
+                        <div className="md:hidden divide-y divide-card-border">
+                            {filteredProducts.map((product) => (
+                                <div key={product.id} className="p-4 space-y-3">
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <p className="font-medium text-foreground text-sm">{product.name}</p>
+                                            <p className="text-xs text-foreground-subtle font-mono">{product.sku}</p>
+                                        </div>
+                                        <span className={`px-2 py-0.5 text-[11px] font-medium rounded-full ${
+                                            product.active ? 'bg-success-muted text-success' : 'bg-background-tertiary text-foreground-subtle'
+                                        }`}>
+                                            {product.active ? 'Active' : 'Inactive'}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4 text-sm">
+                                            <span className="font-bold text-foreground">${Number(product.price).toFixed(2)}</span>
+                                            <span className="text-foreground-muted">Stock: {product.stock}</span>
+                                            {product.stock < 10 && product.stock > 0 && (
+                                                <span className="px-1.5 py-0.5 bg-warning-muted text-warning text-[10px] font-medium rounded-full">Low</span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <button
+                                                onClick={() => handleEditProduct(product)}
+                                                className="p-2 text-foreground-subtle hover:text-primary hover:bg-primary-muted rounded-lg transition-colors"
+                                            >
+                                                <Edit className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteProduct(product.id, product.name)}
+                                                className="p-2 text-foreground-subtle hover:text-destructive hover:bg-destructive-muted rounded-lg transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </>
                 )}
             </div>
 
-            {/* Product Modal */}
             <ProductModal
                 isOpen={isModalOpen}
-                onClose={() => {
-                    setIsModalOpen(false);
-                    setSelectedProduct(null);
-                }}
+                onClose={() => { setIsModalOpen(false); setSelectedProduct(null); }}
                 product={selectedProduct}
             />
         </div>

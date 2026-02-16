@@ -20,30 +20,30 @@ export default function StatCard({
     subtitle,
 }: StatCardProps) {
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 hover:shadow-md transition-all duration-300 hover:scale-[1.02]">
-            <div className="flex items-start justify-between mb-4">
+        <div className="bg-card rounded-xl border border-card-border p-5 hover:border-border-hover transition-all duration-200">
+            <div className="flex items-start justify-between mb-3">
                 <div>
-                    <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
+                    <p className="text-xs font-medium text-foreground-muted mb-1">{title}</p>
                     {isLoading ? (
-                        <div className="h-8 w-32 bg-slate-200 rounded animate-pulse" />
+                        <div className="h-8 w-28 skeleton" />
                     ) : (
-                        <h3 className="text-3xl font-bold text-slate-900">
+                        <h3 className="text-2xl font-bold text-foreground">
                             {prefix}
                             {typeof value === 'number' ? value.toLocaleString() : value}
                         </h3>
                     )}
                     {subtitle && !isLoading && (
-                        <p className="text-xs text-slate-400 mt-1">{subtitle}</p>
+                        <p className="text-[11px] text-foreground-subtle mt-1">{subtitle}</p>
                     )}
                 </div>
-                <div className={`p-3 rounded-xl ${gradient} shadow-lg`}>
-                    <Icon className="w-6 h-6 text-white" />
+                <div className={`p-2.5 rounded-lg ${gradient}`}>
+                    <Icon className="w-5 h-5" />
                 </div>
             </div>
 
             {isLoading && (
-                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full w-1/2 bg-gradient-to-r from-slate-200 to-slate-300 animate-pulse" />
+                <div className="h-1.5 w-full bg-background-tertiary rounded-full overflow-hidden">
+                    <div className="h-full w-1/2 skeleton" />
                 </div>
             )}
         </div>
