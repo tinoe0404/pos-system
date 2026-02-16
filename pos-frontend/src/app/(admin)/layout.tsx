@@ -8,24 +8,26 @@ import AdminSidebar from '@/components/admin/Sidebar';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
-    const { token, user, logout } = useAuthStore();
+    const { token, user, logout, _hasHydrated } = useAuthStore();
     const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
         setIsClient(true);
-        if (!token) {
-            router.replace('/login');
-        } else if (user?.role !== 'admin') {
-            router.replace('/pos');
+        if (_hasHydrated) {
+            if (!token) {
+                router.replace('/login');
+            } else if (user?.role !== 'admin') {
+                router.replace('/pos');
+            }
         }
-    }, [token, user, router]);
+    }, [token, user, router, _hasHydrated]);
 
     const handleLogout = async () => {
         await logout();
         router.push('/login');
     };
 
-    if (!isClient || !token || user?.role !== 'admin') {
+    if (!isClient || !_hasHydrated || !token || user?.role !== 'admin') {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
                 <div className="w-12 h-12 bg-primary-muted text-primary rounded-2xl flex items-center justify-center">

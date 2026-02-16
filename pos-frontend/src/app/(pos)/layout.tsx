@@ -10,7 +10,7 @@ import { Loader2, ShoppingCart, X, Store } from 'lucide-react';
 
 export default function POSLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
-    const token = useAuthStore((state) => state.token);
+    const { token, _hasHydrated } = useAuthStore();
     const [isClient, setIsClient] = useState(false);
     const [mobileCartOpen, setMobileCartOpen] = useState(false);
     const items = useCartStore((state) => state.items);
@@ -18,12 +18,12 @@ export default function POSLayout({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         setIsClient(true);
-        if (!token) {
+        if (_hasHydrated && !token) {
             router.replace('/login');
         }
-    }, [token, router]);
+    }, [token, router, _hasHydrated]);
 
-    if (!isClient || !token) {
+    if (!isClient || !_hasHydrated || !token) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
                 <div className="w-12 h-12 bg-primary-muted text-primary rounded-2xl flex items-center justify-center">
@@ -115,11 +115,10 @@ function MobileNav() {
                     <button
                         key={item.href}
                         onClick={() => router.push(item.href)}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                            isActive
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
                                 ? 'text-foreground bg-background-tertiary'
                                 : 'text-foreground-muted'
-                        }`}
+                            }`}
                     >
                         <item.icon className="w-4 h-4" />
                         {item.label}
