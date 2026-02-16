@@ -136,7 +136,7 @@ export default function CartPanel({ onCheckoutComplete }: CartPanelProps) {
 
     return (
         <>
-            <div className="w-96 bg-card border-l border-card-border h-screen flex flex-col sticky top-0 z-20">
+            <div className="w-full lg:w-96 bg-card border-l border-card-border h-full lg:h-screen flex flex-col lg:sticky top-0 z-20">
                 {/* Header */}
                 <div className="p-4 border-b border-card-border flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3">
