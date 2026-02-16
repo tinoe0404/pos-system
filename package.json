@@ -1,0 +1,12 @@
+{
+    "name": "pos-system",
+    "private": true,
+    "workspaces": [
+        "pos-backend",
+        "pos-frontend"
+    ],
+    "scripts": {
+        "build": "echo 'Building root...'",
+        "start": "echo 'Starting root...'"
+    }
+}
