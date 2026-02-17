@@ -29,13 +29,16 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "lightningcss": "^1.29.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
+    "lightningcss": "^1.29.0",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "lightningcss-linux-x64-gnu": "^1.30.2"
   }
 }
