@@ -11,4 +11,3 @@ exports.prisma = prisma;
 (0, vitest_1.afterAll)(async () => {
     await prisma.$disconnect();
 });
-//# sourceMappingURL=test-setup.js.map

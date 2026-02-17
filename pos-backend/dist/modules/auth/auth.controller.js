@@ -5,12 +5,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.loginHandler = loginHandler;
 exports.meHandler = meHandler;
+exports.logoutHandler = logoutHandler;
 const client_1 = require("@prisma/client");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const prisma = new client_1.PrismaClient();
 async function loginHandler(request, reply) {
     const { username, password } = request.body;
     try {
+        // Find user
         const user = await prisma.user.findUnique({
             where: { username },
         });
@@ -19,12 +21,21 @@ async function loginHandler(request, reply) {
                 error: 'Invalid credentials',
             });
         }
+        // Check if user is active
+        if (!user.is_active) {
+            return reply.code(403).send({
+                error: 'Account deactivated',
+                message: 'Your account has been deactivated. Please contact an administrator.',
+            });
+        }
+        // Verify password
         const isPasswordValid = await bcrypt_1.default.compare(password, user.password_hash);
         if (!isPasswordValid) {
             return reply.code(401).send({
                 error: 'Invalid credentials',
             });
         }
+        // Generate JWT
         const token = request.server.jwt.sign({
             id: user.id,
             username: user.username,
@@ -50,6 +61,7 @@ async function loginHandler(request, reply) {
 async function meHandler(request, reply) {
     try {
         const user = request.user;
+        // Fetch fresh user data
         const userData = await prisma.user.findUnique({
             where: { id: user.id },
             select: {
@@ -64,7 +76,12 @@ async function meHandler(request, reply) {
                 error: 'User not found',
             });
         }
-        return reply.code(200).send(userData);
+        // Return only id, username, role (as per requirements)
+        return reply.code(200).send({
+            id: userData.id,
+            username: userData.username,
+            role: userData.role,
+        });
     }
     catch (error) {
         request.log.error(error);
@@ -73,4 +90,6 @@ async function meHandler(request, reply) {
         });
     }
 }
-//# sourceMappingURL=auth.controller.js.map
+async function logoutHandler(request, reply) {
+    return reply.code(200).send({ message: 'Logged out successfully' });
+}

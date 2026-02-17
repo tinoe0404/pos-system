@@ -108,4 +108,3 @@ async function deleteProductHandler(request, reply) {
         });
     }
 }
-//# sourceMappingURL=product.controller.js.map

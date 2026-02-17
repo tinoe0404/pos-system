@@ -19,7 +19,7 @@ export const reportSaleSchema = z.object({
   id: z.string(),
   user_username: z.string(),
   total: z.string(),
-  status: z.enum(['PENDING', 'COMPLETED', 'FAILED']),
+  status: z.enum(['PENDING', 'COMPLETED', 'FAILED', 'VOIDED']),
   created_at: z.date(),
   items: z.array(reportSaleItemSchema),
 });
