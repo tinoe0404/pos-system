@@ -2,17 +2,19 @@
 
 import Sidebar from '@/components/pos/Sidebar';
 import CartPanel from '@/components/pos/CartPanel';
+import RegisterPanel from '@/components/pos/RegisterPanel';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCartStore } from '@/store/useCartStore';
-import { Loader2, ShoppingCart, X, Store } from 'lucide-react';
+import { Loader2, ShoppingCart, X, Store, DollarSign } from 'lucide-react';
 
 export default function POSLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const { token, _hasHydrated } = useAuthStore();
     const [isClient, setIsClient] = useState(false);
     const [mobileCartOpen, setMobileCartOpen] = useState(false);
+    const [isRegisterOpen, setIsRegisterOpen] = useState(false);
     const items = useCartStore((state) => state.items);
     const getTotal = useCartStore((state) => state.getTotal);
     const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -40,7 +42,7 @@ export default function POSLayout({ children }: { children: React.ReactNode }) {
         <div className="flex min-h-screen bg-background overflow-hidden">
             {/* Sidebar - hidden on mobile, visible on md+ */}
             <div className="hidden md:block">
-                <Sidebar />
+                <Sidebar onOpenRegister={() => setIsRegisterOpen(true)} />
             </div>
 
             {/* Main Content */}
@@ -56,7 +58,7 @@ export default function POSLayout({ children }: { children: React.ReactNode }) {
             {/* Mobile Bottom Bar - Enhanced FAB */}
             <div className="fixed bottom-0 left-0 right-0 md:hidden z-40">
                 <div className="glass border-t border-card-border px-4 py-3 flex items-center justify-between">
-                    <MobileNav />
+                    <MobileNav onOpenRegister={() => setIsRegisterOpen(true)} />
                     <button
                         onClick={() => setMobileCartOpen(true)}
                         className={`relative bg-primary text-foreground rounded-xl font-semibold text-sm flex items-center gap-2 active:scale-[0.95] transition-all shadow-lg shadow-primary/25 ${itemCount > 0 ? 'px-5 py-3' : 'px-4 py-2.5'
@@ -100,11 +102,14 @@ export default function POSLayout({ children }: { children: React.ReactNode }) {
                     </div>
                 </div>
             )}
+
+            {/* Register Panel */}
+            <RegisterPanel isOpen={isRegisterOpen} onClose={() => setIsRegisterOpen(false)} />
         </div>
     );
 }
 
-function MobileNav() {
+function MobileNav({ onOpenRegister }: { onOpenRegister: () => void }) {
     const router = useRouter();
     const pathname =
         typeof window !== 'undefined' ? window.location.pathname : '';
@@ -112,6 +117,7 @@ function MobileNav() {
     const navItems = [
         { icon: Store, label: 'POS', href: '/pos' },
         { icon: ShoppingCart, label: 'Orders', href: '/orders' },
+        { icon: DollarSign, label: 'Register', action: onOpenRegister },
     ];
 
     return (
@@ -120,8 +126,8 @@ function MobileNav() {
                 const isActive = pathname === item.href;
                 return (
                     <button
-                        key={item.href}
-                        onClick={() => router.push(item.href)}
+                        key={item.label}
+                        onClick={() => item.action ? item.action() : router.push(item.href!)}
                         className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
                             ? 'text-foreground bg-background-tertiary'
                             : 'text-foreground-muted'

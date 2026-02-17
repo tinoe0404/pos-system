@@ -22,7 +22,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
     const handleAdd = () => {
         if (isOutOfStock || longPressTriggered.current) return;
-        addItem(product);
+        addItem({ ...product, price: Number(product.price) });
         setJustAdded(true);
         setTimeout(() => setJustAdded(false), 400);
     };
@@ -46,7 +46,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
     const handleQuickAdd = () => {
         for (let i = 0; i < quickQty; i++) {
-            addItem(product);
+            addItem({ ...product, price: Number(product.price) });
         }
         setShowQuantityPicker(false);
         setJustAdded(true);
@@ -65,8 +65,8 @@ export default function ProductCard({ product }: ProductCardProps) {
                 onMouseLeave={handleTouchEnd}
                 disabled={isOutOfStock}
                 className={`relative bg-card rounded-xl border border-card-border p-4 flex flex-col items-start text-left transition-all duration-200 group h-full w-full ${isOutOfStock
-                        ? 'opacity-50 cursor-not-allowed'
-                        : 'hover:border-border-hover hover:bg-card-hover active:scale-[0.95] cursor-pointer'
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:border-border-hover hover:bg-card-hover active:scale-[0.95] cursor-pointer'
                     } ${justAdded ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
             >
                 {/* Image / Placeholder */}

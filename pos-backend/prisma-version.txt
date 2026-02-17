@@ -1,0 +1,3 @@
+Failed to load config file "C:\Projects\pos-system\pos-backend\prisma.config.ts" as a TypeScript/JavaScript module. Error: Error: Cannot find module 'prisma/config'
+Require stack:
+- C:\Projects\pos-system\pos-backend\prisma.config.ts

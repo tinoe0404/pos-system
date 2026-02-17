@@ -2,12 +2,32 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import { LayoutGrid, ClipboardList, Settings, LogOut, Store } from 'lucide-react';
+import { LayoutGrid, ClipboardList, Settings, LogOut, Store, Briefcase, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { downloadStockSheetPDF } from '@/hooks/useStockSheet';
+import { toast } from 'sonner';
 
-export default function Sidebar() {
+interface SidebarProps {
+    onOpenRegister?: () => void;
+}
+
+export default function Sidebar({ onOpenRegister }: SidebarProps) {
     const router = useRouter();
     const pathname = usePathname();
     const logout = useAuthStore((state) => state.logout);
+    const [isDownloading, setIsDownloading] = useState(false);
+
+    const handleDownloadStockSheet = async () => {
+        setIsDownloading(true);
+        try {
+            await downloadStockSheetPDF();
+            toast.success('Stock sheet downloaded');
+        } catch {
+            toast.error('Failed to download stock sheet');
+        } finally {
+            setIsDownloading(false);
+        }
+    };
 
     const handleLogout = async () => {
         await logout();
@@ -36,11 +56,10 @@ export default function Sidebar() {
                             key={item.href}
                             onClick={() => router.push(item.href)}
                             title={item.label}
-                            className={`relative flex flex-col items-center justify-center p-2.5 rounded-xl transition-all duration-200 group ${
-                                isActive
-                                    ? 'bg-primary text-foreground shadow-lg shadow-primary/20'
-                                    : 'text-foreground-muted hover:bg-background-tertiary hover:text-foreground'
-                            }`}
+                            className={`relative flex flex-col items-center justify-center p-2.5 rounded-xl transition-all duration-200 group ${isActive
+                                ? 'bg-primary text-foreground shadow-lg shadow-primary/20'
+                                : 'text-foreground-muted hover:bg-background-tertiary hover:text-foreground'
+                                }`}
                         >
                             {/* Active indicator */}
                             {isActive && (
@@ -56,6 +75,39 @@ export default function Sidebar() {
                         </button>
                     );
                 })}
+
+                {/* Register Button */}
+                <button
+                    onClick={onOpenRegister}
+                    title="Register"
+                    className="relative flex flex-col items-center justify-center p-2.5 rounded-xl transition-all duration-200 group text-foreground-muted hover:bg-background-tertiary hover:text-foreground"
+                >
+                    <Briefcase className="w-5 h-5" />
+                    <span className="text-[10px] mt-1 font-medium leading-none">Register</span>
+                    <span className="absolute left-full ml-3 px-2.5 py-1.5 bg-background-tertiary text-foreground text-xs font-medium rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap border border-card-border z-50">
+                        Shift/Cash
+                    </span>
+                </button>
+
+                {/* Stock Sheet Download Button */}
+                <button
+                    onClick={handleDownloadStockSheet}
+                    disabled={isDownloading}
+                    title="Stock Sheet"
+                    className="relative flex flex-col items-center justify-center p-2.5 rounded-xl transition-all duration-200 group text-foreground-muted hover:bg-background-tertiary hover:text-foreground disabled:opacity-50"
+                >
+                    {isDownloading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                        <FileSpreadsheet className="w-5 h-5" />
+                    )}
+                    <span className="text-[10px] mt-1 font-medium leading-none">
+                        {isDownloading ? '...' : 'Stock'}
+                    </span>
+                    <span className="absolute left-full ml-3 px-2.5 py-1.5 bg-background-tertiary text-foreground text-xs font-medium rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap border border-card-border z-50">
+                        Download Stock Sheet
+                    </span>
+                </button>
             </nav>
 
             {/* Logout */}

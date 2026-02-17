@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { salesQueue } from '../../shared/queue';
 import { CreateSaleInput, SalesPaginationQuery } from './sales.schema';
+import { registerService } from '../register/register.service';
 
 const prisma = new PrismaClient();
 
@@ -105,6 +106,16 @@ export class SalesService {
         },
       });
 
+      // Record sale in cash register (if open)
+      // We do this outside the transaction to avoid locking register table
+      // and because it's a secondary log (non-critical for sale completion)
+      try {
+        await registerService.recordSale(userId, Number(sale.total));
+      } catch (regError) {
+        console.error('Failed to record sale to register:', regError);
+        // Don't fail the sale, just log error
+      }
+
       return {
         ...saleWithItems!,
         total: saleWithItems!.total.toString(),
@@ -115,6 +126,61 @@ export class SalesService {
       };
     } catch (error) {
       console.error('Error creating sale:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Void a sale validation and processing
+   */
+  async voidSale(saleId: string, voidedById: string, reason: string) {
+    try {
+      const sale = await prisma.sale.findUnique({
+        where: { id: saleId },
+        include: { items: true },
+      });
+
+      if (!sale) {
+        throw new Error('Sale not found');
+      }
+
+      if (sale.status === 'VOIDED' as any) { // Type assertion until Prisma client updates
+        throw new Error('Sale is already voided');
+      }
+
+      // 1. Transaction to update sale and restore stock
+      await prisma.$transaction(async (tx) => {
+        // Update sale status
+        await tx.sale.update({
+          where: { id: saleId },
+          data: {
+            status: 'VOIDED' as any,
+            void_reason: reason,
+            voided_by_id: voidedById,
+            voided_at: new Date(),
+          } as any, // Type assertions for new fields
+        });
+
+        // Restore stock
+        for (const item of sale.items) {
+          await tx.product.update({
+            where: { id: item.product_id },
+            data: {
+              stock: {
+                increment: item.quantity,
+              },
+            },
+          });
+        }
+      });
+
+      // 2. Record negative sale in register (if open)
+      await registerService.recordSale(voidedById, -Number(sale.total));
+
+      console.log(`🚫 Sale ${saleId} voided by ${voidedById}`);
+      return true;
+    } catch (error) {
+      console.error('Error voiding sale:', error);
       throw error;
     }
   }

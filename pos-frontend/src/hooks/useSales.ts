@@ -13,7 +13,8 @@ export interface Sale {
     id: string;
     items: SaleItem[];
     total: number;
-    paymentMethod: 'CASH' | 'ECOCASH';
+    paymentMethod: 'CASH' | 'ECOCASH' | 'CARD';
+    status: 'COMPLETED' | 'VOIDED';
     createdAt: string;
     updatedAt: string;
 }
@@ -41,6 +42,7 @@ export const useSales = () => {
                 })),
                 total: Number(sale.total),
                 paymentMethod: sale.payment_method,
+                status: sale.status,
                 createdAt: sale.created_at,
                 updatedAt: sale.updated_at,
             }));

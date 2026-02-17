@@ -8,6 +8,7 @@ import {
   salesListResponseSchema,
   salesPaginationSchema,
   publicReceiptResponseSchema,
+  voidSaleSchema,
 } from './sales.schema';
 import {
   createSaleHandler,
@@ -15,8 +16,9 @@ import {
   getAllSalesHandler,
   getTodaySalesHandler,
   getPublicReceiptHandler,
+  voidSaleHandler,
 } from './sales.controller';
-import { authenticate } from '../auth/auth.middleware';
+import { authenticate, requirePinOrRole } from '../auth/auth.middleware';
 
 async function salesRoutes(app: FastifyInstance) {
   const server = app.withTypeProvider<ZodTypeProvider>();
@@ -97,6 +99,24 @@ async function salesRoutes(app: FastifyInstance) {
       },
     },
     getPublicReceiptHandler
+  );
+
+  // POST /api/sales/:id/void - Void a sale (Protected: Admin or PIN)
+  server.post(
+    '/:id/void',
+    {
+      onRequest: [authenticate, requirePinOrRole('admin')],
+      schema: {
+        params: z.object({
+          id: z.string(),
+        }),
+        body: voidSaleSchema,
+        response: {
+          200: z.object({ message: z.string() })
+        }
+      },
+    },
+    voidSaleHandler
   );
 }
 

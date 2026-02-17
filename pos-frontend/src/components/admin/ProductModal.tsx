@@ -35,7 +35,7 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
     } = useForm<ProductFormData>({
         resolver: zodResolver(productFormSchema) as any,
         defaultValues: {
-            name: '', description: '', price: 0, stock: 0, sku: '', category: '', is_active: true,
+            name: '', description: '', price: 0, stock: 0, min_stock: 10, sku: '', category: '', is_active: true,
         },
     });
 
@@ -46,12 +46,13 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                 description: product.description || '',
                 price: parseFloat(product.price),
                 stock: product.stock,
+                min_stock: (product as any).min_stock ?? 10,
                 sku: product.sku,
                 category: product.category || '',
                 is_active: product.is_active,
             });
         } else if (isOpen && !product) {
-            reset({ name: '', description: '', price: 0, stock: 0, sku: '', category: '', is_active: true });
+            reset({ name: '', description: '', price: 0, stock: 0, min_stock: 10, sku: '', category: '', is_active: true });
         }
     }, [isOpen, product, reset]);
 
@@ -122,6 +123,22 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                             </label>
                             <input {...register('stock', { valueAsNumber: true })} type="number" className={inputClass} placeholder="0" />
                             {errors.stock && <p className="text-destructive text-xs">{errors.stock.message}</p>}
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-medium text-foreground-muted">
+                                Stock <span className="text-destructive">*</span>
+                            </label>
+                            <input {...register('stock', { valueAsNumber: true })} type="number" className={inputClass} placeholder="0" />
+                            {errors.stock && <p className="text-destructive text-xs">{errors.stock.message}</p>}
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-medium text-foreground-muted">
+                                Min Stock <span className="text-destructive">*</span>
+                            </label>
+                            <input {...register('min_stock', { valueAsNumber: true })} type="number" className={inputClass} placeholder="10" />
+                            {errors.min_stock && <p className="text-destructive text-xs">{errors.min_stock.message}</p>}
                         </div>
                     </div>
 

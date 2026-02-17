@@ -12,6 +12,11 @@ export const createSaleSchema = z.object({
   paymentMethod: z.enum(['CASH', 'ECOCASH']).default('CASH'),
 });
 
+export const voidSaleSchema = z.object({
+  reason: z.string().min(1, 'Reason is required'),
+  pin: z.string().length(4, 'PIN must be 4 digits').optional(),
+});
+
 // Pagination query schema
 export const salesPaginationSchema = z.object({
   status: z.enum(['PENDING', 'COMPLETED', 'FAILED']).optional(),
@@ -109,6 +114,7 @@ export const salesListResponseSchema = z.object({
 // TypeScript types
 export type SaleItemInput = z.infer<typeof saleItemInputSchema>;
 export type CreateSaleInput = z.infer<typeof createSaleSchema>;
+export type VoidSaleInput = z.infer<typeof voidSaleSchema>;
 export type SalesPaginationQuery = z.infer<typeof salesPaginationSchema>;
 export type SaleItemResponse = z.infer<typeof saleItemResponseSchema>;
 export type SaleItemWithProduct = z.infer<typeof saleItemWithProductSchema>;

@@ -1,18 +1,28 @@
 'use client';
 
 import { useSales, Sale } from '@/hooks/useSales';
-import { Loader2, Receipt, Eye, Search, ClipboardList } from 'lucide-react';
+import { Loader2, Receipt, Eye, Search, ClipboardList, Trash2, RotateCcw } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import ReceiptModal from '@/components/pos/ReceiptModal';
+import PinModal from '@/components/pos/PinModal';
+import RefundModal from '@/components/pos/RefundModal';
 import { CartItem } from '@/store/useCartStore';
+import { voidSale } from '@/lib/api';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function OrdersPage() {
     const { data, isLoading } = useSales();
+    const queryClient = useQueryClient();
     const [searchQuery, setSearchQuery] = useState('');
+
+    // State for modals
     const [selectedOrder, setSelectedOrder] = useState<{
         order: Sale;
         action: 'view' | 'reprint';
     } | null>(null);
+    const [voidOrder, setVoidOrder] = useState<Sale | null>(null);
+    const [refundOrder, setRefundOrder] = useState<Sale | null>(null);
 
     const getReceiptData = (sale: Sale) => ({
         id: sale.id,
@@ -27,6 +37,25 @@ export default function OrdersPage() {
         paymentMethod: sale.paymentMethod as 'CASH' | 'ECOCASH' | 'CARD',
         tax: sale.total * 0.1,
     });
+
+    const handleVoidVerify = async (pin: string) => {
+        if (!voidOrder) return false;
+        try {
+            await voidSale(voidOrder.id, "Manager Void", pin);
+            toast.success('Sale voided successfully');
+            queryClient.invalidateQueries({ queryKey: ['sales'] });
+            setVoidOrder(null);
+            return true;
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Failed to void sale');
+            return false;
+        }
+    };
+
+    const handleRefundSuccess = () => {
+        queryClient.invalidateQueries({ queryKey: ['sales'] });
+        setRefundOrder(null);
+    };
 
     const filteredSales = useMemo(() => {
         if (!data?.sales) return [];
@@ -86,6 +115,7 @@ export default function OrdersPage() {
                                     <tr>
                                         <th className="px-5 py-3 text-[11px] font-semibold text-foreground-subtle uppercase tracking-wider">Receipt ID</th>
                                         <th className="px-5 py-3 text-[11px] font-semibold text-foreground-subtle uppercase tracking-wider">Time</th>
+                                        <th className="px-5 py-3 text-[11px] font-semibold text-foreground-subtle uppercase tracking-wider">Status</th>
                                         <th className="px-5 py-3 text-[11px] font-semibold text-foreground-subtle uppercase tracking-wider">Items</th>
                                         <th className="px-5 py-3 text-[11px] font-semibold text-foreground-subtle uppercase tracking-wider">Total</th>
                                         <th className="px-5 py-3 text-[11px] font-semibold text-foreground-subtle uppercase tracking-wider">Payment</th>
@@ -101,6 +131,12 @@ export default function OrdersPage() {
                                             <td className="px-5 py-3.5 text-sm text-foreground-muted">
                                                 {new Date(sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </td>
+                                            <td className="px-5 py-3.5">
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${sale.status === 'VOIDED' ? 'bg-destructive/10 text-destructive' : 'bg-success/10 text-success'
+                                                    }`}>
+                                                    {sale.status || 'COMPLETED'}
+                                                </span>
+                                            </td>
                                             <td className="px-5 py-3.5 text-sm text-foreground-muted">
                                                 <div className="truncate max-w-[200px]" title={sale.items.map(i => `${i.quantity}x ${i.productName}`).join(', ')}>
                                                     {sale.items.slice(0, 2).map(i => `${i.quantity}x ${i.productName}`).join(', ')}
@@ -111,11 +147,8 @@ export default function OrdersPage() {
                                                 ${sale.total.toFixed(2)}
                                             </td>
                                             <td className="px-5 py-3.5">
-                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${
-                                                    sale.paymentMethod === 'CASH'
-                                                        ? 'bg-success-muted text-success'
-                                                        : 'bg-primary-muted text-primary'
-                                                }`}>
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${sale.paymentMethod === 'CASH' ? 'bg-success-muted text-success' : 'bg-primary-muted text-primary'
+                                                    }`}>
                                                     {sale.paymentMethod}
                                                 </span>
                                             </td>
@@ -135,6 +168,26 @@ export default function OrdersPage() {
                                                     >
                                                         <Eye className="w-4 h-4" />
                                                     </button>
+                                                    {/* Refund Button */}
+                                                    {sale.status === 'COMPLETED' && (
+                                                        <button
+                                                            onClick={() => setRefundOrder(sale)}
+                                                            className="p-2 text-foreground-subtle hover:text-warning hover:bg-warning-muted rounded-lg transition-colors"
+                                                            title="Refund"
+                                                        >
+                                                            <RotateCcw className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                    {/* Void Button */}
+                                                    {sale.status !== 'VOIDED' && (
+                                                        <button
+                                                            onClick={() => setVoidOrder(sale)}
+                                                            className="p-2 text-foreground-subtle hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                                                            title="Void Sale"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -149,11 +202,16 @@ export default function OrdersPage() {
                                 <div key={sale.id} className="bg-card rounded-xl border border-card-border p-4 space-y-3">
                                     <div className="flex items-center justify-between">
                                         <span className="text-xs font-mono text-foreground-muted">#{sale.id.slice(-8).toUpperCase()}</span>
-                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${
-                                            sale.paymentMethod === 'CASH' ? 'bg-success-muted text-success' : 'bg-primary-muted text-primary'
-                                        }`}>
-                                            {sale.paymentMethod}
-                                        </span>
+                                        <div className="flex gap-2">
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${sale.status === 'VOIDED' ? 'bg-destructive/10 text-destructive' : 'bg-success/10 text-success'
+                                                }`}>
+                                                {sale.status || 'COMPLETED'}
+                                            </span>
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${sale.paymentMethod === 'CASH' ? 'bg-success-muted text-success' : 'bg-primary-muted text-primary'
+                                                }`}>
+                                                {sale.paymentMethod}
+                                            </span>
+                                        </div>
                                     </div>
                                     <div className="text-sm text-foreground-muted">
                                         {sale.items.map(i => `${i.quantity}x ${i.productName}`).join(', ')}
@@ -178,6 +236,23 @@ export default function OrdersPage() {
                                             >
                                                 <Eye className="w-4 h-4" />
                                             </button>
+                                            {/* Refund Button */}
+                                            {sale.status === 'COMPLETED' && (
+                                                <button
+                                                    onClick={() => setRefundOrder(sale)}
+                                                    className="p-2 text-foreground-subtle hover:text-warning hover:bg-warning-muted rounded-lg transition-colors"
+                                                >
+                                                    <RotateCcw className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                            {sale.status !== 'VOIDED' && (
+                                                <button
+                                                    onClick={() => setVoidOrder(sale)}
+                                                    className="p-2 text-foreground-subtle hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -195,6 +270,21 @@ export default function OrdersPage() {
                     autoPrint={selectedOrder.action === 'reprint'}
                 />
             )}
+
+            <PinModal
+                isOpen={!!voidOrder}
+                onClose={() => setVoidOrder(null)}
+                onVerify={handleVoidVerify}
+                title="Void Sale"
+                description="Enter admin PIN to void this sale"
+            />
+
+            <RefundModal
+                isOpen={!!refundOrder}
+                onClose={() => setRefundOrder(null)}
+                sale={refundOrder}
+                onRefundSuccess={handleRefundSuccess}
+            />
         </div>
     );
 }

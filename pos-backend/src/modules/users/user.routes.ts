@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import {
+  setPinSchema,
   createUserSchema,
   userResponseSchema,
   usersListResponseSchema,
@@ -10,6 +11,7 @@ import {
   getAllUsersHandler,
   createUserHandler,
   deactivateUserHandler,
+  setPinHandler,
 } from './user.controller';
 import { authenticate, requireRole } from '../auth/auth.middleware';
 
@@ -60,6 +62,24 @@ async function userRoutes(app: FastifyInstance) {
       },
     },
     deactivateUserHandler
+  );
+
+  // PUT /api/users/:id/pin - Set user PIN (Protected: Admin only)
+  server.put(
+    '/:id/pin',
+    {
+      onRequest: [authenticate, requireRole('admin')],
+      schema: {
+        params: z.object({
+          id: z.string(),
+        }),
+        body: setPinSchema,
+        response: {
+          200: z.object({ message: z.string() }),
+        },
+      },
+    },
+    setPinHandler
   );
 }
 

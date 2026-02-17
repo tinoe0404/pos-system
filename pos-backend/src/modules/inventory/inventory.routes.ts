@@ -8,6 +8,7 @@ import {
 import {
   restockProductHandler,
   adjustStockHandler,
+  getLowStockHandler,
 } from './inventory.controller';
 import { authenticate, requireRole } from '../auth/auth.middleware';
 
@@ -42,6 +43,15 @@ async function inventoryRoutes(app: FastifyInstance) {
       },
     },
     adjustStockHandler
+  );
+
+  // GET /api/inventory/low-stock - Get products with low stock (Protected: Admin only)
+  server.get(
+    '/low-stock',
+    {
+      onRequest: [authenticate, requireRole('admin')],
+    },
+    getLowStockHandler
   );
 }
 

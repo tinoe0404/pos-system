@@ -2,6 +2,26 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { userService } from './user.service';
 import { CreateUserInput } from './user.schema';
 
+export async function setPinHandler(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    const { id } = request.params as { id: string };
+    const { pin } = request.body as { pin: string };
+
+    await userService.setPin(id, pin);
+
+    return reply.code(200).send({ message: 'PIN updated successfully' });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'PIN must be 4 digits') {
+      return reply.code(400).send({ message: error.message });
+    }
+    request.log.error(error);
+    return reply.code(500).send({
+      error: 'Internal server error',
+      message: 'Failed to set PIN',
+    });
+  }
+}
+
 export async function getAllUsersHandler(
   request: FastifyRequest,
   reply: FastifyReply

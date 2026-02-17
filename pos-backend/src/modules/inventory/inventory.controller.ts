@@ -51,3 +51,19 @@ export async function adjustStockHandler(
     });
   }
 }
+
+export async function getLowStockHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  try {
+    const products = await inventoryService.getLowStockProducts();
+    return reply.code(200).send(products);
+  } catch (error) {
+    request.log.error(error);
+    return reply.code(500).send({
+      error: 'Internal server error',
+      message: 'Failed to fetch low stock products',
+    });
+  }
+}

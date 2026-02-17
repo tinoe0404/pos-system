@@ -11,6 +11,10 @@ export const deactivateUserSchema = z.object({
   id: z.string(),
 });
 
+export const setPinSchema = z.object({
+  pin: z.string().length(4).regex(/^\d+$/, 'PIN must be 4 digits'),
+});
+
 // Output schemas
 export const userResponseSchema = z.object({
   id: z.string(),

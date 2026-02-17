@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Package, Users, FileText, Menu, X, Store } from 'lucide-react';
+import { LayoutDashboard, Package, Users, FileText, Menu, X, Store, ClipboardList } from 'lucide-react';
 import { useState } from 'react';
 
 const navItems = [
@@ -10,6 +10,7 @@ const navItems = [
     { name: 'Inventory', href: '/admin/inventory', icon: Package },
     { name: 'Users', href: '/admin/users', icon: Users },
     { name: 'Reports', href: '/admin/reports', icon: FileText },
+    { name: 'Stock Sheet', href: '/admin/stock-sheet', icon: ClipboardList },
 ];
 
 export default function AdminSidebar() {
@@ -69,11 +70,10 @@ export default function AdminSidebar() {
                                     key={item.href}
                                     href={item.href}
                                     onClick={() => setIsOpen(false)}
-                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm ${
-                                        isActive
+                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm ${isActive
                                             ? 'bg-primary text-foreground font-medium'
                                             : 'text-foreground-muted hover:bg-background-tertiary hover:text-foreground'
-                                    }`}
+                                        }`}
                                 >
                                     <Icon className="w-[18px] h-[18px]" />
                                     <span>{item.name}</span>

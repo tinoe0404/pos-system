@@ -122,6 +122,30 @@ export class InventoryService {
       throw error;
     }
   }
+  async getLowStockProducts() {
+    try {
+      // Find products where stock <= min_stock
+      // Using raw query or findMany with where clause
+      // Prisma doesn't support field comparison in where clause directly efficiently in all versions, 
+      // but we can query all active products and filter, or use raw query.
+      // Since stock and min_stock are fields on the same model, we can use Prisma's raw query for best performance,
+      // OR since we added an index, we can just fetch them if we had a computed column.
+      // But standard Prisma findMany `where: { stock: { lte: prisma.product.fields.min_stock } }` is not supported.
+
+      // Let's use queryRaw for efficiency
+      const products = await prisma.$queryRaw`
+        SELECT id, name, sku, stock, min_stock as "minStock", price 
+        FROM products 
+        WHERE stock <= min_stock AND is_active = true
+        ORDER BY stock ASC
+      `;
+
+      return products;
+    } catch (error) {
+      console.error('Error fetching low stock products:', error);
+      throw error;
+    }
+  }
 }
 
 export const inventoryService = new InventoryService();

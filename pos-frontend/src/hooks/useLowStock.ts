@@ -18,10 +18,22 @@ interface LowStockResponse {
 
 export const useLowStock = () => {
     return useQuery<LowStockResponse>({
-        queryKey: ['notifications', 'low-stock'],
+        queryKey: ['inventory', 'low-stock'],
         queryFn: async () => {
-            const res = await api.get('/api/notifications/low-stock');
-            return res.data;
+            const { data } = await api.get<any[]>('/api/inventory/low-stock');
+            // Backend returns array of products
+            return {
+                lowStockProducts: data.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    sku: p.sku,
+                    stock: p.stock,
+                    category: p.category || '',
+                    price: p.price
+                })),
+                count: data.length,
+                threshold: 10 // This should ideally come from backend or config
+            };
         },
         staleTime: 60000, // Cache for 1 minute
     });

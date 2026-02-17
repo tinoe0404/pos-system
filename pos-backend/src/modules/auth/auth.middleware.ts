@@ -29,3 +29,31 @@ export function requireRole(...allowedRoles: UserRole[]) {
     }
   };
 }
+
+export function requirePinOrRole(requiredRole: UserRole) {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = request.user as { role: UserRole };
+    const body = request.body as { pin?: string } | undefined;
+
+    // 1. Check if user already has the role
+    if (user && user.role === requiredRole) {
+      return;
+    }
+
+    // 2. Check if a valid PIN is provided
+    if (body?.pin) {
+      // Lazy import to avoid circular dependency if any
+      const { userService } = await import('../users/user.service');
+      const isValid = await userService.verifyAdminPin(body.pin);
+      if (isValid) {
+        return;
+      }
+    }
+
+    // 3. Forbidden
+    return reply.code(403).send({
+      error: 'Forbidden',
+      message: 'Insufficient permissions. Admin PIN required.',
+    });
+  };
+}

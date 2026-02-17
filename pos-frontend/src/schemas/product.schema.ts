@@ -9,6 +9,10 @@ export const productFormSchema = z.object({
     stock: z.number()
         .int('Stock must be an integer')
         .min(0, 'Stock cannot be negative'),
+    min_stock: z.number()
+        .int('Min Stock must be an integer')
+        .min(0, 'Min Stock cannot be negative')
+        .default(10),
     sku: z.string().min(1, 'SKU is required').max(100, 'SKU must be less than 100 characters'),
     category: z.string().max(100, 'Category must be less than 100 characters').optional().or(z.literal('')),
     is_active: z.boolean().default(true),

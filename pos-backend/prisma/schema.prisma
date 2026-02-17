@@ -16,6 +16,7 @@ enum SaleStatus {
   PENDING
   COMPLETED
   FAILED
+  VOIDED
 }
 
 enum PaymentMethod {
@@ -23,15 +24,26 @@ enum PaymentMethod {
   ECOCASH
 }
 
+enum RegisterLogType {
+  SALE
+  CASH_IN
+  CASH_OUT
+  ADJUSTMENT
+}
+
 model User {
   id            String   @id @default(cuid())
   username      String   @unique
   password_hash String
+  pin_hash      String?
   role          UserRole @default(cashier)
-  is_active     Boolean  @default(true)  // ✅ NEW FIELD
+  is_active     Boolean  @default(true)
   created_at    DateTime @default(now())
 
-  sales Sale[]
+  sales          Sale[]
+  voided_sales   Sale[]          @relation("VoidedBy")
+  refunds        Refund[]
+  cash_registers CashRegister[]
 
   @@map("users")
 }
@@ -42,6 +54,7 @@ model Product {
   description String?
   price       Decimal  @db.Decimal(10, 2)
   stock       Int      @default(0)
+  min_stock   Int      @default(10)
   sku         String   @unique
   category    String?
   is_active   Boolean  @default(true)
@@ -49,10 +62,12 @@ model Product {
   updated_at  DateTime @updatedAt
 
   sale_items SaleItem[]
+  refund_items RefundItem[]
 
   @@map("products")
   @@index([sku])
   @@index([category])
+  @@index([stock]) // Index for low stock queries
 }
 
 model Sale {
@@ -61,11 +76,16 @@ model Sale {
   total          Decimal       @db.Decimal(10, 2)
   status         SaleStatus    @default(PENDING)
   payment_method PaymentMethod @default(CASH)
+  void_reason    String?
+  voided_by_id   String?
+  voided_at      DateTime?
   created_at     DateTime      @default(now())
   updated_at     DateTime      @updatedAt
 
-  user  User       @relation(fields: [user_id], references: [id])
-  items SaleItem[]
+  user      User       @relation(fields: [user_id], references: [id])
+  voided_by User?      @relation("VoidedBy", fields: [voided_by_id], references: [id])
+  items     SaleItem[]
+  refunds   Refund[]
 
   @@map("sales")
   @@index([user_id])
@@ -86,4 +106,73 @@ model SaleItem {
   @@map("sale_items")
   @@index([sale_id])
   @@index([product_id])
+}
+
+enum RefundStatus {
+  PENDING
+  COMPLETED
+  REJECTED
+}
+
+model Refund {
+  id           String       @id @default(cuid())
+  sale_id      String
+  user_id      String
+  total_amount Decimal      @db.Decimal(10, 2)
+  reason       String?
+  status       RefundStatus @default(COMPLETED)
+  created_at   DateTime     @default(now())
+
+  sale  Sale         @relation(fields: [sale_id], references: [id])
+  user  User         @relation(fields: [user_id], references: [id])
+  items RefundItem[]
+
+  @@map("refunds")
+  @@index([sale_id])
+  @@index([user_id])
+}
+
+model RefundItem {
+  id         String  @id @default(cuid())
+  refund_id  String
+  product_id String
+  quantity   Int
+  amount     Decimal @db.Decimal(10, 2)
+
+  refund  Refund  @relation(fields: [refund_id], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [product_id], references: [id])
+
+  @@map("refund_items")
+}
+
+model CashRegister {
+  id              String    @id @default(cuid())
+  user_id         String
+  opened_at       DateTime  @default(now())
+  closed_at       DateTime?
+  opening_amount  Decimal   @db.Decimal(10, 2)
+  closing_amount  Decimal?  @db.Decimal(10, 2)
+  expected_amount Decimal?  @db.Decimal(10, 2)
+  notes           String?
+
+  user User              @relation(fields: [user_id], references: [id])
+  logs CashRegisterLog[]
+
+  @@map("cash_registers")
+  @@index([user_id])
+  @@index([opened_at])
+}
+
+model CashRegisterLog {
+  id          String          @id @default(cuid())
+  register_id String
+  type        RegisterLogType
+  amount      Decimal         @db.Decimal(10, 2)
+  note        String?
+  created_at  DateTime        @default(now())
+
+  register CashRegister @relation(fields: [register_id], references: [id], onDelete: Cascade)
+
+  @@map("cash_register_logs")
+  @@index([register_id])
 }

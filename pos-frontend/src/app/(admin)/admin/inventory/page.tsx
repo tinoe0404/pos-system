@@ -86,7 +86,7 @@ export default function InventoryPage() {
                     },
                     {
                         label: 'Low Stock',
-                        value: productsData?.products.filter((p) => p.stock < 10).length || 0,
+                        value: productsData?.products.filter((p) => p.stock <= (p.min_stock ?? 10)).length || 0,
                         icon: AlertCircle,
                         color: 'bg-warning-muted text-warning',
                     },
@@ -161,15 +161,14 @@ export default function InventoryPage() {
                                                     <span className="font-medium text-foreground text-sm">{product.stock}</span>
                                                     {product.stock === 0 ? (
                                                         <span className="px-1.5 py-0.5 bg-destructive-muted text-destructive text-[10px] font-medium rounded-full">Out</span>
-                                                    ) : product.stock < 10 ? (
+                                                    ) : product.stock <= (product.min_stock ?? 10) ? (
                                                         <span className="px-1.5 py-0.5 bg-warning-muted text-warning text-[10px] font-medium rounded-full">Low</span>
                                                     ) : null}
                                                 </div>
                                             </td>
                                             <td className="px-5 py-3.5">
-                                                <span className={`px-2 py-0.5 text-[11px] font-medium rounded-full ${
-                                                    product.active ? 'bg-success-muted text-success' : 'bg-background-tertiary text-foreground-subtle'
-                                                }`}>
+                                                <span className={`px-2 py-0.5 text-[11px] font-medium rounded-full ${product.active ? 'bg-success-muted text-success' : 'bg-background-tertiary text-foreground-subtle'
+                                                    }`}>
                                                     {product.active ? 'Active' : 'Inactive'}
                                                 </span>
                                             </td>
@@ -206,9 +205,8 @@ export default function InventoryPage() {
                                             <p className="font-medium text-foreground text-sm">{product.name}</p>
                                             <p className="text-xs text-foreground-subtle font-mono">{product.sku}</p>
                                         </div>
-                                        <span className={`px-2 py-0.5 text-[11px] font-medium rounded-full ${
-                                            product.active ? 'bg-success-muted text-success' : 'bg-background-tertiary text-foreground-subtle'
-                                        }`}>
+                                        <span className={`px-2 py-0.5 text-[11px] font-medium rounded-full ${product.active ? 'bg-success-muted text-success' : 'bg-background-tertiary text-foreground-subtle'
+                                            }`}>
                                             {product.active ? 'Active' : 'Inactive'}
                                         </span>
                                     </div>
