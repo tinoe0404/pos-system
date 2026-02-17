@@ -1,7 +1,22 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcrypt'
+import Redis from 'ioredis'
 
 const prisma = new PrismaClient()
+
+// Connect to Redis to clear the product cache after seeding
+function getRedis() {
+  if (process.env.REDIS_URL) {
+    return new Redis(process.env.REDIS_URL, {
+      tls: process.env.REDIS_URL.startsWith('rediss://') ? {} : undefined,
+      maxRetriesPerRequest: 3,
+    })
+  }
+  return new Redis({
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT || '6379', 10),
+  })
+}
 
 // ── All Products (with prices, descriptions, categories) ──
 const allProducts = [
@@ -125,6 +140,17 @@ async function main() {
       },
     })
     console.log(`  ✅ ${created.name.padEnd(25)} | $${created.price.toString().padEnd(6)} | ${created.sku}`)
+  }
+
+  // ── 3. Clear Redis product cache so API returns fresh data ──
+  console.log('\n🗑️  Clearing Redis product cache...')
+  try {
+    const redis = getRedis()
+    await redis.del('all_products')
+    console.log('✅ Redis product cache cleared')
+    await redis.quit()
+  } catch (err) {
+    console.warn('⚠️  Could not clear Redis cache (non-fatal):', err)
   }
 
   console.log(`\n🎉 Seed complete! ${allProducts.length} products and 2 users ready.`)
