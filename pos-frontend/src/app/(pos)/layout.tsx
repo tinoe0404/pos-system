@@ -7,7 +7,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCartStore } from '@/store/useCartStore';
-import { Loader2, ShoppingCart, X, Store, DollarSign } from 'lucide-react';
+import { Loader2, ShoppingCart, Store, DollarSign, LayoutGrid, ClipboardList, Wallet, Settings } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 export default function POSLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
@@ -40,13 +41,11 @@ export default function POSLayout({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="flex min-h-screen bg-background overflow-hidden">
-            {/* Sidebar - hidden on mobile, visible on md+ */}
-            <div className="hidden md:block">
-                <Sidebar onOpenRegister={() => setIsRegisterOpen(true)} />
-            </div>
+            {/* Sidebar - responsive behavior handled internally */}
+            <Sidebar onOpenRegister={() => setIsRegisterOpen(true)} />
 
-            {/* Main Content */}
-            <main className="flex-1 h-screen overflow-y-auto w-full">
+            {/* Main Content - add bottom padding on mobile to account for bottom nav */}
+            <main className="flex-1 h-screen overflow-y-auto w-full pb-20 md:pb-0">
                 {children}
             </main>
 
@@ -55,23 +54,23 @@ export default function POSLayout({ children }: { children: React.ReactNode }) {
                 <CartPanel />
             </div>
 
-            {/* Mobile Bottom Bar - Enhanced FAB */}
+            {/* Mobile Bottom Bar */}
             <div className="fixed bottom-0 left-0 right-0 md:hidden z-40">
-                <div className="glass border-t border-card-border px-4 py-3 flex items-center justify-between">
+                <div className="glass border-t border-card-border px-2 py-2 flex items-center justify-between">
                     <MobileNav onOpenRegister={() => setIsRegisterOpen(true)} />
                     <button
                         onClick={() => setMobileCartOpen(true)}
-                        className={`relative bg-primary text-foreground rounded-xl font-semibold text-sm flex items-center gap-2 active:scale-[0.95] transition-all shadow-lg shadow-primary/25 ${itemCount > 0 ? 'px-5 py-3' : 'px-4 py-2.5'
+                        className={`relative bg-primary text-foreground rounded-xl font-semibold text-sm flex items-center gap-2 active:scale-[0.95] transition-all shadow-lg shadow-primary/25 ${itemCount > 0 ? 'px-4 py-2.5' : 'px-3 py-2'
                             }`}
                     >
-                        <ShoppingCart className="w-5 h-5" />
+                        <ShoppingCart className="w-4 h-4" />
                         {itemCount > 0 ? (
-                            <span>Cart · ${cartTotal.toFixed(2)}</span>
+                            <span className="text-xs">${cartTotal.toFixed(2)}</span>
                         ) : (
-                            <span>Cart</span>
+                            <span className="text-xs">Cart</span>
                         )}
                         {itemCount > 0 && (
-                            <span className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-foreground text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
+                            <span className="absolute -top-2 -right-2 w-5 h-5 bg-destructive text-foreground text-[10px] rounded-full flex items-center justify-center font-bold animate-pulse">
                                 {itemCount}
                             </span>
                         )}
@@ -103,30 +102,31 @@ export default function POSLayout({ children }: { children: React.ReactNode }) {
 
 function MobileNav({ onOpenRegister }: { onOpenRegister: () => void }) {
     const router = useRouter();
-    const pathname =
-        typeof window !== 'undefined' ? window.location.pathname : '';
+    const pathname = usePathname();
 
     const navItems = [
-        { icon: Store, label: 'POS', href: '/pos' },
-        { icon: ShoppingCart, label: 'Orders', href: '/orders' },
+        { icon: LayoutGrid, label: 'POS', href: '/pos' },
+        { icon: ClipboardList, label: 'Orders', href: '/orders' },
+        { icon: Wallet, label: 'Tabs', href: '/tabs' },
+        { icon: Settings, label: 'Settings', href: '/settings' },
         { icon: DollarSign, label: 'Register', action: onOpenRegister },
     ];
 
     return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
             {navItems.map((item) => {
-                const isActive = pathname === item.href;
+                const isActive = item.href ? pathname === item.href : false;
                 return (
                     <button
                         key={item.label}
                         onClick={() => item.action ? item.action() : router.push(item.href!)}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
-                            ? 'text-foreground bg-background-tertiary'
+                        className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-medium transition-colors ${isActive
+                            ? 'text-primary'
                             : 'text-foreground-muted'
                             }`}
                     >
                         <item.icon className="w-4 h-4" />
-                        {item.label}
+                        <span>{item.label}</span>
                     </button>
                 );
             })}
