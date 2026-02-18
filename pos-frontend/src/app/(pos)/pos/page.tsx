@@ -80,19 +80,17 @@ export default function POSPage() {
                         <button
                             key={category}
                             onClick={() => setSelectedCategory(category)}
-                            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 ${
-                                selectedCategory === category
+                            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 ${selectedCategory === category
                                     ? 'bg-primary text-foreground'
                                     : 'bg-card border border-card-border text-foreground-muted hover:bg-card-hover hover:text-foreground'
-                            }`}
+                                }`}
                         >
                             <span>{category === 'all' ? 'All Items' : category}</span>
                             <span
-                                className={`text-[11px] px-1.5 py-0.5 rounded-full ${
-                                    selectedCategory === category
+                                className={`text-[11px] px-1.5 py-0.5 rounded-full ${selectedCategory === category
                                         ? 'bg-foreground/15 text-foreground'
                                         : 'bg-background-tertiary text-foreground-subtle'
-                                }`}
+                                    }`}
                             >
                                 {getCategoryCount(category)}
                             </span>
@@ -108,7 +106,7 @@ export default function POSPage() {
                     <p className="text-foreground-muted text-sm">Loading products...</p>
                 </div>
             ) : filteredProducts.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 overflow-y-auto pb-20">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 sm:gap-3 overflow-y-auto pb-24 md:pb-6">
                     {filteredProducts.map((product: Product, i: number) => (
                         <div key={product.id} className="stagger-item h-full">
                             <ProductCard product={product} />

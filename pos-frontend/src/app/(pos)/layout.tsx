@@ -86,19 +86,11 @@ export default function POSLayout({ children }: { children: React.ReactNode }) {
                         className="absolute inset-0 bg-background/80 backdrop-blur-sm"
                         onClick={() => setMobileCartOpen(false)}
                     />
-                    <div className="absolute right-0 top-0 bottom-0 w-full max-w-md animate-slide-in-right">
-                        <div className="h-full flex flex-col">
-                            <div className="flex items-center justify-between p-4 border-b border-card-border bg-card">
-                                <h2 className="text-lg font-semibold text-foreground">Cart</h2>
-                                <button
-                                    onClick={() => setMobileCartOpen(false)}
-                                    className="p-2 text-foreground-muted hover:text-foreground rounded-lg transition-colors"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-                            <CartPanel onCheckoutComplete={() => setMobileCartOpen(false)} />
-                        </div>
+                    <div className="absolute right-0 top-0 bottom-0 w-full max-w-md animate-slide-in-right" style={{ height: '100dvh' }}>
+                        <CartPanel
+                            onCheckoutComplete={() => setMobileCartOpen(false)}
+                            onClose={() => setMobileCartOpen(false)}
+                        />
                     </div>
                 </div>
             )}

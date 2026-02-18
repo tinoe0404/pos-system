@@ -16,9 +16,10 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface CartPanelProps {
     onCheckoutComplete?: () => void;
+    onClose?: () => void;
 }
 
-export default function CartPanel({ onCheckoutComplete }: CartPanelProps) {
+export default function CartPanel({ onCheckoutComplete, onClose }: CartPanelProps) {
     const { items, clearCart, removeItem, updateQuantity, getTotal } = useCartStore();
     const { orders: heldOrders, addOrder: holdOrder, removeOrder: resumeHeldOrder } = useHeldOrders();
     const [mounted, setMounted] = useState(false);
@@ -137,9 +138,9 @@ export default function CartPanel({ onCheckoutComplete }: CartPanelProps) {
 
     return (
         <>
-            <div className="w-full lg:w-96 bg-card border-l border-card-border h-full lg:h-screen flex flex-col lg:sticky top-0 z-20">
+            <div className="w-full lg:w-96 bg-card border-l border-card-border h-full lg:h-screen flex flex-col lg:sticky top-0 z-20 overflow-hidden">
                 {/* Header */}
-                <div className="p-4 border-b border-card-border flex items-center justify-between shrink-0">
+                <div className="p-3 sm:p-4 border-b border-card-border flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="bg-primary-muted p-2 rounded-lg">
                             <ShoppingCart className="w-4 h-4 text-primary" />
@@ -151,7 +152,7 @@ export default function CartPanel({ onCheckoutComplete }: CartPanelProps) {
                             )}
                         </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-0.5 sm:gap-1">
                         {/* Hold Order */}
                         <button
                             onClick={handleHoldOrder}
@@ -183,6 +184,16 @@ export default function CartPanel({ onCheckoutComplete }: CartPanelProps) {
                         >
                             <Trash2 className="w-4 h-4" />
                         </button>
+                        {/* Mobile Close Button */}
+                        {onClose && (
+                            <button
+                                onClick={onClose}
+                                className="p-2 text-foreground-muted hover:text-foreground hover:bg-background-tertiary rounded-lg transition-all lg:hidden"
+                                title="Close Cart"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -210,7 +221,7 @@ export default function CartPanel({ onCheckoutComplete }: CartPanelProps) {
                 )}
 
                 {/* Cart Items */}
-                <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                <div className="flex-1 overflow-y-auto p-2 sm:p-3 space-y-1.5 sm:space-y-2 min-h-0">
                     {items.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-foreground-subtle gap-3">
                             <div className="w-14 h-14 bg-background-tertiary rounded-2xl flex items-center justify-center">
@@ -283,8 +294,8 @@ export default function CartPanel({ onCheckoutComplete }: CartPanelProps) {
                 )}
 
                 {/* Footer / Totals */}
-                <div className="p-4 border-t border-card-border shrink-0">
-                    <div className="space-y-1.5 mb-4">
+                <div className="p-3 sm:p-4 border-t border-card-border shrink-0">
+                    <div className="space-y-1 sm:space-y-1.5 mb-3 sm:mb-4">
                         <div className="flex justify-between text-sm text-foreground-muted">
                             <span>Subtotal</span>
                             <span>${subtotal.toFixed(2)}</span>
@@ -309,7 +320,7 @@ export default function CartPanel({ onCheckoutComplete }: CartPanelProps) {
                     <button
                         onClick={handleChargeClick}
                         disabled={items.length === 0 || isPending}
-                        className="w-full h-12 bg-primary text-foreground font-semibold rounded-xl hover:bg-primary-hover disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+                        className="w-full h-11 sm:h-12 bg-primary text-foreground font-semibold rounded-xl hover:bg-primary-hover disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
                     >
                         {isPending ? (
                             <Loader2 className="w-5 h-5 animate-spin" />
@@ -380,9 +391,9 @@ function CartItemRow({ item, onUpdateQuantity, onRemove, disabled }: CartItemRow
                         onRemove(item.id);
                     }
                 }}
-                className="relative bg-background-secondary p-3 rounded-xl border border-card-border flex gap-3 group hover:border-border-hover transition-colors cursor-grab active:cursor-grabbing touch-pan-y"
+                className="relative bg-background-secondary p-2.5 sm:p-3 rounded-xl border border-card-border flex gap-2.5 sm:gap-3 group hover:border-border-hover transition-colors cursor-grab active:cursor-grabbing touch-pan-y"
             >
-                <div className="w-12 h-12 bg-background-tertiary rounded-lg shrink-0 flex items-center justify-center font-bold text-foreground-subtle text-sm">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-background-tertiary rounded-lg shrink-0 flex items-center justify-center font-bold text-foreground-subtle text-xs sm:text-sm">
                     {item.name.charAt(0)}
                 </div>
                 <div className="flex-1 flex flex-col justify-between min-w-0">
