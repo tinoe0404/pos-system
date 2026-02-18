@@ -3,12 +3,13 @@ import { tabsService } from './tabs.service';
 import { CreateTabInput, DepositTabInput, CloseTabInput, TabSearchQuery } from './tabs.schema';
 
 export async function createTabHandler(
-    request: FastifyRequest<{ Body: CreateTabInput }>,
+    request: FastifyRequest,
     reply: FastifyReply
 ) {
     try {
-        const userId = (request as any).user.id;
-        const tab = await tabsService.createTab(userId, request.body);
+        const user = request.user as { id: string };
+        const body = request.body as CreateTabInput;
+        const tab = await tabsService.createTab(user.id, body);
         return reply.code(201).send(tab);
     } catch (error: any) {
         return reply.code(400).send({ message: error.message });
@@ -16,7 +17,7 @@ export async function createTabHandler(
 }
 
 export async function getTabsHandler(
-    request: FastifyRequest<{ Querystring: TabSearchQuery }>,
+    request: FastifyRequest,
     reply: FastifyReply
 ) {
     try {
@@ -29,11 +30,12 @@ export async function getTabsHandler(
 }
 
 export async function getTabByIdHandler(
-    request: FastifyRequest<{ Params: { id: string } }>,
+    request: FastifyRequest,
     reply: FastifyReply
 ) {
     try {
-        const tab = await tabsService.getTabById(request.params.id);
+        const { id } = request.params as { id: string };
+        const tab = await tabsService.getTabById(id);
         return reply.send(tab);
     } catch (error: any) {
         return reply.code(404).send({ message: error.message });
@@ -41,14 +43,16 @@ export async function getTabByIdHandler(
 }
 
 export async function depositToTabHandler(
-    request: FastifyRequest<{ Params: { id: string }; Body: DepositTabInput }>,
+    request: FastifyRequest,
     reply: FastifyReply
 ) {
     try {
+        const { id } = request.params as { id: string };
+        const body = request.body as DepositTabInput;
         const tab = await tabsService.depositToTab(
-            request.params.id,
-            request.body.amount,
-            request.body.note
+            id,
+            body.amount,
+            body.note
         );
         return reply.send(tab);
     } catch (error: any) {
@@ -57,11 +61,13 @@ export async function depositToTabHandler(
 }
 
 export async function closeTabHandler(
-    request: FastifyRequest<{ Params: { id: string }; Body: CloseTabInput }>,
+    request: FastifyRequest,
     reply: FastifyReply
 ) {
     try {
-        const result = await tabsService.closeTab(request.params.id, request.body.note);
+        const { id } = request.params as { id: string };
+        const body = request.body as CloseTabInput;
+        const result = await tabsService.closeTab(id, body.note);
         return reply.send(result);
     } catch (error: any) {
         return reply.code(400).send({ message: error.message });

@@ -80,15 +80,3 @@ async function tabRoutes(app: FastifyInstance) {
 
 export default tabRoutes;
 
-// POST /api/tabs/:id/close - Close tab
-server.post(
-    '/:id/close',
-    {
-        onRequest: [authenticate],
-        schema: { body: closeTabSchema },
-    },
-    closeTabHandler
-);
-}
-
-export default tabRoutes;
