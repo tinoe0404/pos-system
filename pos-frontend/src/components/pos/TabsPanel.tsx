@@ -24,12 +24,13 @@ export default function TabsPanel({ onClose, onSelectTab, isSelectionMode = fals
     const handleTabClick = (tab: any) => {
         if (isSelectionMode && onSelectTab) {
             onSelectTab(tab);
-            onClose();
+            // Don't call onClose() here - let the parent handle the flow
         } else {
             setSelectedTabId(tab.id);
             setView('DETAILS');
         }
     };
+
 
     return (
         <div className="w-full h-full bg-card flex flex-col">
@@ -369,9 +370,9 @@ function TabDetails({ tabId }: { tabId: string }) {
                         <div key={t.id} className="p-3 bg-background-secondary rounded-xl border border-card-border flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${t.type === 'DEPOSIT' ? 'bg-success/10 text-success' :
-                                        t.type === 'PURCHASE' ? 'bg-destructive/10 text-destructive' :
-                                            t.type === 'REFUND' ? 'bg-warning/10 text-warning' :
-                                                'bg-foreground/10 text-foreground'
+                                    t.type === 'PURCHASE' ? 'bg-destructive/10 text-destructive' :
+                                        t.type === 'REFUND' ? 'bg-warning/10 text-warning' :
+                                            'bg-foreground/10 text-foreground'
                                     }`}>
                                     {t.type === 'DEPOSIT' && <ArrowDownLeft className="w-4 h-4" />}
                                     {t.type === 'PURCHASE' && <ArrowUpRight className="w-4 h-4" />}
