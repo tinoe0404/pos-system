@@ -1,7 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../shared/prisma';
 import PDFDocument from 'pdfkit';
 
-const prisma = new PrismaClient();
 
 // Category display order matching the TCP Investments stock sheet
 const CATEGORY_ORDER = [

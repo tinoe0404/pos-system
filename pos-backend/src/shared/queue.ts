@@ -1,8 +1,7 @@
 import { Queue, Worker, Job } from 'bullmq';
-import { PrismaClient } from '@prisma/client';
+import prisma from './prisma';
 import redis, { getRedisConnectionConfig } from './redis';
 
-const prisma = new PrismaClient();
 
 // Queue configuration
 export const salesQueue = new Queue('sales-queue', {

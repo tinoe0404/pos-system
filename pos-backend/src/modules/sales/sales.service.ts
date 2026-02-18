@@ -1,9 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../shared/prisma';
 import { salesQueue } from '../../shared/queue';
 import { CreateSaleInput, SalesPaginationQuery } from './sales.schema';
 import { registerService } from '../register/register.service';
 
-const prisma = new PrismaClient();
 
 export class SalesService {
   /**

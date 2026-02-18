@@ -1,8 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../shared/prisma';
 import bcrypt from 'bcrypt';
 import { CreateUserInput } from './user.schema';
 
-const prisma = new PrismaClient();
 
 export class UserService {
   /**

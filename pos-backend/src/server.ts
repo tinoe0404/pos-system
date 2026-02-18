@@ -1,10 +1,9 @@
 import 'dotenv/config';
 import { buildApp } from './app';
-import { PrismaClient } from '@prisma/client';
+import prisma from './shared/prisma';
 import redis from './shared/redis';
 import { salesWorker } from './shared/queue';
 
-const prisma = new PrismaClient();
 
 async function start() {
   try {

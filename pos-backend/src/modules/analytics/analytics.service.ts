@@ -1,6 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../shared/prisma';
 
-const prisma = new PrismaClient();
 
 export class AnalyticsService {
   /**

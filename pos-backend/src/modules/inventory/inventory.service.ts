@@ -1,8 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../shared/prisma';
 import redis from '../../shared/redis';
 import { RestockInput, AdjustStockInput } from './inventory.schema';
 
-const prisma = new PrismaClient();
 const CACHE_KEY = 'all_products';
 
 export class InventoryService {

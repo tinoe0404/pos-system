@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../shared/prisma';
 import PDFDocument from 'pdfkit';
 import {
   DailyReportData,
@@ -7,7 +7,6 @@ import {
   MonthlyJsonReport,
 } from './reports.schema';
 
-const prisma = new PrismaClient();
 
 export class ReportsService {
   /**

@@ -2,6 +2,8 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import jwt from '@fastify/jwt';
+import compress from '@fastify/compress';
+import rateLimit from '@fastify/rate-limit';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import { jsonSchemaTransform } from 'fastify-type-provider-zod';
@@ -27,6 +29,8 @@ import registerRoutes from './modules/register/register.routes';
 import { refundRoutes } from './modules/refunds/refund.routes';
 import stockSheetRoutes from './modules/stocksheet/stocksheet.routes';
 import tabRoutes from './modules/tabs/tabs.routes';
+import prisma from './shared/prisma';
+import redis from './shared/redis';
 
 export async function buildApp() {
   const app = Fastify({
@@ -76,6 +80,15 @@ export async function buildApp() {
     crossOriginEmbedderPolicy: false,
   });
 
+  // Register Response Compression (60-80% smaller JSON payloads)
+  await app.register(compress, { global: true });
+
+  // Register Rate Limiting
+  await app.register(rateLimit, {
+    max: 100,
+    timeWindow: '1 minute',
+  });
+
   // Register JWT
   // Register JWT
   await app.register(jwt, {
@@ -116,10 +129,14 @@ export async function buildApp() {
     routePrefix: '/documentation',
   });
 
-  // Health check endpoint
+  // Health check endpoint with DB + Redis status
   app.get('/health', async () => {
+    const dbHealthy = await prisma.$queryRawUnsafe('SELECT 1').then(() => true).catch(() => false);
+    const redisHealthy = await redis.ping().then(() => true).catch(() => false);
     return {
-      status: 'ok',
+      status: dbHealthy && redisHealthy ? 'ok' : 'degraded',
+      db: dbHealthy,
+      redis: redisHealthy,
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
     };

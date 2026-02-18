@@ -1,8 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../shared/prisma';
 import redis from '../../shared/redis';
 import { CreateProductInput, UpdateProductInput } from './product.schema';
 
-const prisma = new PrismaClient();
 
 const CACHE_KEY = 'all_products';
 const CACHE_TTL = 3600; // 1 hour in seconds
@@ -29,7 +28,7 @@ export class ProductService {
     try {
       // Try to get from cache first
       const cached = await redis.get(CACHE_KEY);
-      
+
       if (cached) {
         console.log('🎯 Cache HIT: Returning products from Redis');
         return {
@@ -40,7 +39,7 @@ export class ProductService {
       }
 
       console.log('💾 Cache MISS: Fetching products from Database');
-      
+
       // Fetch from database
       const products = await prisma.product.findMany({
         orderBy: { created_at: 'desc' },
@@ -138,7 +137,7 @@ export class ProductService {
   async updateProduct(id: string, data: UpdateProductInput) {
     try {
       const updateData: Record<string, unknown> = {};
-      
+
       if (data.name !== undefined) updateData.name = data.name;
       if (data.description !== undefined) updateData.description = data.description;
       if (data.price !== undefined) updateData.price = data.price;

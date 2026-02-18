@@ -1,8 +1,8 @@
-import { PrismaClient, Prisma, SaleStatus } from '@prisma/client';
+import { Prisma, SaleStatus } from '@prisma/client';
+import prisma from '../../shared/prisma';
 import { CreateRefundInput } from './refund.schema';
 import { registerService } from '../register/register.service'; // To log cash out
 
-const prisma = new PrismaClient();
 
 export const refundService = {
     async processRefund(userId: string, data: CreateRefundInput) {

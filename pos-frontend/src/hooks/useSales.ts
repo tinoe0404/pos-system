@@ -52,5 +52,8 @@ export const useSales = () => {
                 count: data.count,
             };
         },
+        staleTime: 30 * 1000,           // 30 sec cache — sales need fresher data
+        refetchInterval: 60 * 1000,     // Auto-refresh every 1 min
     });
 };
+

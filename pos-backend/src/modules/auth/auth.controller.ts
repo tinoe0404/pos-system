@@ -1,9 +1,8 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../shared/prisma';
 import bcrypt from 'bcrypt';
 import { LoginInput } from './auth.schema';
 
-const prisma = new PrismaClient();
 
 export async function loginHandler(
   request: FastifyRequest<{
