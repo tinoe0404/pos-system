@@ -142,5 +142,6 @@ async function buildApp() {
     await app.register(register_routes_1.default, { prefix: '/api/register' });
     await app.register(refund_routes_1.refundRoutes, { prefix: '/api' });
     await app.register(stocksheet_routes_1.default, { prefix: '/api/reports/stock-sheet' });
+    await app.register(tabRoutes, { prefix: '/api/tabs' });
     return app;
 }

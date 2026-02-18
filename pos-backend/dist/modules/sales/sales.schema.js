@@ -11,6 +11,7 @@ exports.saleItemInputSchema = zod_1.z.object({
 exports.createSaleSchema = zod_1.z.object({
     items: zod_1.z.array(exports.saleItemInputSchema).min(1, 'At least one item is required'),
     paymentMethod: zod_1.z.enum(['CASH', 'ECOCASH']).default('CASH'),
+    tabId: zod_1.z.string().optional(),
 });
 exports.voidSaleSchema = zod_1.z.object({
     reason: zod_1.z.string().min(1, 'Reason is required'),

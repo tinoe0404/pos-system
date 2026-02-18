@@ -44,17 +44,56 @@ export class SalesService {
         0
       );
 
+      // Validate Tab if provided
+      let tab: any = null;
+      if (data.tabId) {
+        tab = await prisma.tab.findUnique({ where: { id: data.tabId } });
+        if (!tab) throw new Error('Tab not found');
+        if (tab.status !== 'ACTIVE') throw new Error('Tab is not active');
+        if (Number(tab.balance) < total) {
+          throw new Error(
+            `Insufficient tab balance. Available: $${Number(tab.balance).toFixed(2)}, Required: $${total.toFixed(2)}`
+          );
+        }
+      }
+
       // Create sale with items in a transaction
       const sale = await prisma.$transaction(async (tx) => {
+        // Handle Tab Deduction
+        if (tab) {
+          const newBalance = Number(tab.balance) - total;
+          await tx.tab.update({
+            where: { id: tab.id },
+            data: {
+              balance: newBalance,
+              status: newBalance <= 0 ? 'EXHAUSTED' : 'ACTIVE',
+            },
+          });
+        }
+
         // Create the sale
         const newSale = await tx.sale.create({
           data: {
             user_id: userId,
+            tab_id: data.tabId,
             total,
             status: 'PENDING',
-            payment_method: data.paymentMethod,
+            payment_method: data.tabId ? 'TAB' : data.paymentMethod,
           },
         });
+
+        // Create tab transaction if using tab
+        if (tab) {
+          await tx.tabTransaction.create({
+            data: {
+              tab_id: tab.id,
+              type: 'PURCHASE',
+              amount: total,
+              sale_id: newSale.id,
+              note: 'Purchase from tab',
+            },
+          });
+        }
 
         // Create sale items
         await tx.saleItem.createMany({
@@ -106,14 +145,15 @@ export class SalesService {
         },
       });
 
-      // Record sale in cash register (if open)
-      // We do this outside the transaction to avoid locking register table
-      // and because it's a secondary log (non-critical for sale completion)
-      try {
-        await registerService.recordSale(userId, Number(sale.total));
-      } catch (regError) {
-        console.error('Failed to record sale to register:', regError);
-        // Don't fail the sale, just log error
+      // Record sale in cash register ONLY if NOT a tab sale
+      // Tab sales do not increase cash in drawer
+      if (!data.tabId) {
+        try {
+          await registerService.recordSale(userId, Number(sale.total));
+        } catch (regError) {
+          console.error('Failed to record sale to register:', regError);
+          // Don't fail the sale, just log error
+        }
       }
 
       return {
@@ -174,8 +214,33 @@ export class SalesService {
         }
       });
 
-      // 2. Record negative sale in register (if open)
-      await registerService.recordSale(voidedById, -Number(sale.total));
+      // 2. Record negative sale in register (if open) AND NOT TAB
+      if (sale.payment_method === 'TAB' && sale.tab_id) {
+        // Refund to tab
+        await prisma.$transaction(async (tx) => {
+          await tx.tabTransaction.create({
+            data: {
+              tab_id: sale.tab_id!,
+              type: 'REFUND',
+              amount: sale.total,
+              sale_id: sale.id,
+              note: 'Sale voided - amount returned to tab',
+            },
+          });
+
+          await tx.tab.update({
+            where: { id: sale.tab_id! },
+            data: {
+              balance: { increment: sale.total },
+              status: 'ACTIVE', // Reactivate if was EXHAUSTED
+            },
+          });
+        });
+        console.log(`💳 Refunded to tab ${sale.tab_id}`);
+      } else {
+        // Refund to cash drawer log
+        await registerService.recordSale(voidedById, -Number(sale.total));
+      }
 
       console.log(`🚫 Sale ${saleId} voided by ${voidedById}`);
       return true;

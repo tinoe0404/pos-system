@@ -22,6 +22,7 @@ enum SaleStatus {
 enum PaymentMethod {
   CASH
   ECOCASH
+  TAB
 }
 
 enum RegisterLogType {
@@ -29,6 +30,19 @@ enum RegisterLogType {
   CASH_IN
   CASH_OUT
   ADJUSTMENT
+}
+
+enum TabStatus {
+  ACTIVE
+  CLOSED
+  EXHAUSTED
+}
+
+enum TabTransactionType {
+  DEPOSIT
+  PURCHASE
+  REFUND
+  CASHOUT
 }
 
 model User {
@@ -44,6 +58,7 @@ model User {
   voided_sales   Sale[]          @relation("VoidedBy")
   refunds        Refund[]
   cash_registers CashRegister[]
+  tabs           Tab[]
 
   @@map("users")
 }
@@ -73,6 +88,7 @@ model Product {
 model Sale {
   id             String        @id @default(cuid())
   user_id        String
+  tab_id         String?
   total          Decimal       @db.Decimal(10, 2)
   status         SaleStatus    @default(PENDING)
   payment_method PaymentMethod @default(CASH)
@@ -82,13 +98,16 @@ model Sale {
   created_at     DateTime      @default(now())
   updated_at     DateTime      @updatedAt
 
-  user      User       @relation(fields: [user_id], references: [id])
-  voided_by User?      @relation("VoidedBy", fields: [voided_by_id], references: [id])
-  items     SaleItem[]
-  refunds   Refund[]
+  user             User              @relation(fields: [user_id], references: [id])
+  voided_by        User?             @relation("VoidedBy", fields: [voided_by_id], references: [id])
+  tab              Tab?              @relation(fields: [tab_id], references: [id])
+  items            SaleItem[]
+  refunds          Refund[]
+  tab_transactions TabTransaction[]
 
   @@map("sales")
   @@index([user_id])
+  @@index([tab_id])
   @@index([status])
   @@index([created_at])
 }
@@ -175,4 +194,41 @@ model CashRegisterLog {
 
   @@map("cash_register_logs")
   @@index([register_id])
+}
+
+model Tab {
+  id              String    @id @default(cuid())
+  customer_name   String
+  phone           String?
+  balance         Decimal   @db.Decimal(10, 2)
+  initial_deposit Decimal   @db.Decimal(10, 2)
+  status          TabStatus @default(ACTIVE)
+  created_by_id   String
+  created_at      DateTime  @default(now())
+  closed_at       DateTime?
+
+  created_by   User             @relation(fields: [created_by_id], references: [id])
+  transactions TabTransaction[]
+  sales        Sale[]
+
+  @@map("tabs")
+  @@index([status])
+  @@index([customer_name])
+  @@index([created_by_id])
+}
+
+model TabTransaction {
+  id         String             @id @default(cuid())
+  tab_id     String
+  type       TabTransactionType
+  amount     Decimal            @db.Decimal(10, 2)
+  sale_id    String?
+  note       String?
+  created_at DateTime           @default(now())
+
+  tab  Tab   @relation(fields: [tab_id], references: [id])
+  sale Sale? @relation(fields: [sale_id], references: [id])
+
+  @@map("tab_transactions")
+  @@index([tab_id])
 }

@@ -10,6 +10,7 @@ export const saleItemInputSchema = z.object({
 export const createSaleSchema = z.object({
   items: z.array(saleItemInputSchema).min(1, 'At least one item is required'),
   paymentMethod: z.enum(['CASH', 'ECOCASH']).default('CASH'),
+  tabId: z.string().optional(),
 });
 
 export const voidSaleSchema = z.object({

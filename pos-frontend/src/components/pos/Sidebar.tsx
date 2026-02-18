@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import { LayoutGrid, ClipboardList, Settings, LogOut, Store, Briefcase, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { LayoutGrid, ClipboardList, Settings, LogOut, Store, Briefcase, FileSpreadsheet, Loader2, Wallet } from 'lucide-react';
 import { useState } from 'react';
 import { downloadStockSheetPDF } from '@/hooks/useStockSheet';
 import { toast } from 'sonner';
@@ -37,6 +37,7 @@ export default function Sidebar({ onOpenRegister }: SidebarProps) {
     const navItems = [
         { icon: LayoutGrid, label: 'POS', href: '/pos' },
         { icon: ClipboardList, label: 'Orders', href: '/orders' },
+        { icon: Wallet, label: 'Tabs', href: '/tabs' },
         { icon: Settings, label: 'Settings', href: '/settings' },
     ];
 

@@ -13,7 +13,7 @@ interface ReceiptModalProps {
         items: CartItem[];
         total: number;
         date: string;
-        paymentMethod: 'CASH' | 'ECOCASH' | 'CARD';
+        paymentMethod: 'CASH' | 'ECOCASH' | 'CARD' | 'TAB';
         tax: number;
         discount?: number;
     } | null;

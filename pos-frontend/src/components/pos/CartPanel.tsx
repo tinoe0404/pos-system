@@ -39,7 +39,7 @@ export default function CartPanel({ onCheckoutComplete, onClose }: CartPanelProp
         items: CartItem[];
         total: number;
         date: string;
-        paymentMethod: 'CASH' | 'ECOCASH' | 'CARD';
+        paymentMethod: 'CASH' | 'ECOCASH' | 'CARD' | 'TAB';
         tax: number;
         discount: number;
     } | null>(null);
@@ -102,9 +102,18 @@ export default function CartPanel({ onCheckoutComplete, onClose }: CartPanelProp
     }), [handleChargeClick, handleHoldOrder]);
     useKeyboardShortcuts(shortcuts);
 
-    const handleConfirmPayment = (method: 'CASH' | 'ECOCASH' | 'CARD') => {
+    const handleConfirmPayment = (paymentMethod: 'CASH' | 'ECOCASH' | 'CARD' | 'TAB', tabId?: string) => {
+        setIsPaymentModalOpen(false);
+
+        // Map UI payment methods to API payment methods
+        // CARD is not yet supported in backend, treating as CASH for now or specific CARD logic
+        // TAB needs tabId
+        let method: 'CASH' | 'ECOCASH' | 'TAB' = 'CASH';
+        if (paymentMethod === 'ECOCASH') method = 'ECOCASH';
+        if (paymentMethod === 'TAB') method = 'TAB';
+
         createOrder(
-            { items, paymentMethod: method === 'CARD' ? 'CASH' : method },
+            { items, paymentMethod: method, tabId },
             {
                 onSuccess: (data) => {
                     setLastOrder({
@@ -112,11 +121,10 @@ export default function CartPanel({ onCheckoutComplete, onClose }: CartPanelProp
                         items: [...items],
                         total: finalTotal,
                         date: new Date().toISOString(),
-                        paymentMethod: method,
+                        paymentMethod: paymentMethod,
                         tax,
                         discount: discountAmount,
                     });
-                    setIsPaymentModalOpen(false);
                     clearCart();
                     setDiscount({ type: 'percent', value: 0 });
                     setOrderNote('');

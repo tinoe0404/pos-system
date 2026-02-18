@@ -45,4 +45,25 @@ export const cashOut = async (amount: number, note?: string) => {
     return api.post('/api/register/cash-out', { amount, note });
 };
 
+// Tabs
+export const createTab = async (data: { customer_name: string; phone?: string; deposit_amount: number }) => {
+    return api.post('/api/tabs', data);
+};
+
+export const getTabs = async (params?: { q?: string; status?: string }) => {
+    return api.get('/api/tabs', { params });
+};
+
+export const getTabById = async (id: string) => {
+    return api.get(`/api/tabs/${id}`);
+};
+
+export const depositToTab = async (id: string, amount: number, note?: string) => {
+    return api.post(`/api/tabs/${id}/deposit`, { amount, note });
+};
+
+export const closeTab = async (id: string, note?: string) => {
+    return api.post(`/api/tabs/${id}/close`, { note });
+};
+
 export default api;

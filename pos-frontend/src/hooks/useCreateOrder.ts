@@ -9,7 +9,8 @@ interface CreateOrderPayload {
         quantity: number;
         priceAtSale: number;
     }[];
-    paymentMethod: 'CASH' | 'ECOCASH';
+    paymentMethod: 'CASH' | 'ECOCASH' | 'TAB';
+    tabId?: string;
 }
 
 interface ProductsResponse {
@@ -21,7 +22,7 @@ export const useCreateOrder = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ items, paymentMethod }: { items: CartItem[]; paymentMethod: 'CASH' | 'ECOCASH' }) => {
+        mutationFn: async ({ items, paymentMethod, tabId }: { items: CartItem[]; paymentMethod: 'CASH' | 'ECOCASH' | 'TAB'; tabId?: string }) => {
             const payload: CreateOrderPayload = {
                 items: items.map((item) => ({
                     productId: item.id,
@@ -29,6 +30,7 @@ export const useCreateOrder = () => {
                     priceAtSale: Number(item.price),
                 })),
                 paymentMethod,
+                tabId,
             };
             const res = await api.post('/api/sales', payload);
             return res.data;
