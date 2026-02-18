@@ -26,6 +26,7 @@ import reportsRoutes from './modules/reports/reports.routes';
 import registerRoutes from './modules/register/register.routes';
 import { refundRoutes } from './modules/refunds/refund.routes';
 import stockSheetRoutes from './modules/stocksheet/stocksheet.routes';
+import tabRoutes from './modules/tabs/tabs.routes';
 
 export async function buildApp() {
   const app = Fastify({
