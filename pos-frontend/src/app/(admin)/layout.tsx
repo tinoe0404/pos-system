@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import { Loader2, LogOut, Store } from 'lucide-react';
+import { useThemeStore } from '@/store/useThemeStore';
+import { Loader2, LogOut, Store, Sun, Moon } from 'lucide-react';
 import AdminSidebar from '@/components/admin/Sidebar';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const { token, user, logout, _hasHydrated } = useAuthStore();
+    const { resolvedTheme, toggleTheme } = useThemeStore();
     const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
@@ -51,13 +53,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             </h1>
                             <p className="text-[11px] text-foreground-subtle">Manage your business</p>
                         </div>
-                        <button
-                            onClick={handleLogout}
-                            className="flex items-center gap-2 px-3 py-2 text-foreground-muted hover:text-foreground hover:bg-background-tertiary rounded-lg transition-colors text-sm"
-                        >
-                            <LogOut className="w-4 h-4" />
-                            <span className="hidden sm:inline">Logout</span>
-                        </button>
+                        <div className="flex items-center gap-1">
+                            {/* Theme Toggle */}
+                            <button
+                                onClick={toggleTheme}
+                                className="p-2 text-foreground-muted hover:text-warning hover:bg-warning-muted rounded-lg transition-all"
+                                title={resolvedTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                            >
+                                {resolvedTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                            </button>
+                            {/* Logout */}
+                            <button
+                                onClick={handleLogout}
+                                className="flex items-center gap-2 px-3 py-2 text-foreground-muted hover:text-foreground hover:bg-background-tertiary rounded-lg transition-colors text-sm"
+                            >
+                                <LogOut className="w-4 h-4" />
+                                <span className="hidden sm:inline">Logout</span>
+                            </button>
+                        </div>
                     </div>
                 </header>
                 <main className="flex-1 overflow-auto">{children}</main>
