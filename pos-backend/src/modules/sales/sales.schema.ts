@@ -9,7 +9,7 @@ export const saleItemInputSchema = z.object({
 
 export const createSaleSchema = z.object({
   items: z.array(saleItemInputSchema).min(1, 'At least one item is required'),
-  paymentMethod: z.enum(['CASH', 'ECOCASH']).default('CASH'),
+  paymentMethod: z.enum(['CASH', 'ECOCASH', 'TAB']).default('CASH'),
   tabId: z.string().optional(),
 });
 
@@ -60,7 +60,7 @@ export const saleResponseSchema = z.object({
   user_id: z.string(),
   total: z.string(), // Decimal as string
   status: z.enum(['PENDING', 'COMPLETED', 'FAILED']),
-  payment_method: z.enum(['CASH', 'ECOCASH']),
+  payment_method: z.enum(['CASH', 'ECOCASH', 'TAB']),
   created_at: z.union([z.date(), z.string()]),
   updated_at: z.union([z.date(), z.string()]),
   items: z.array(saleItemResponseSchema).optional(),
@@ -84,7 +84,7 @@ export const publicReceiptResponseSchema = z.object({
   id: z.string(),
   total: z.string(),
   status: z.enum(['PENDING', 'COMPLETED', 'FAILED']),
-  payment_method: z.enum(['CASH', 'ECOCASH']),
+  payment_method: z.enum(['CASH', 'ECOCASH', 'TAB']),
   created_at: z.union([z.date(), z.string()]),
   items: z.array(
     z.object({

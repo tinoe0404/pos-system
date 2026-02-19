@@ -13,7 +13,7 @@ export interface Sale {
     id: string;
     items: SaleItem[];
     total: number;
-    paymentMethod: 'CASH' | 'ECOCASH' | 'CARD';
+    paymentMethod: 'CASH' | 'ECOCASH' | 'TAB';
     status: 'COMPLETED' | 'VOIDED';
     createdAt: string;
     updatedAt: string;

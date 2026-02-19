@@ -1,6 +1,6 @@
 'use client';
 
-import { X, Banknote, Smartphone, CreditCard, ArrowLeft, CheckCircle2, Loader2, Wallet } from 'lucide-react';
+import { X, Banknote, Smartphone, ArrowLeft, CheckCircle2, Loader2, Wallet } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { CartItem } from '@/store/useCartStore';
 import { toast } from 'sonner';
@@ -9,7 +9,7 @@ import TabsPanel from './TabsPanel';
 interface PaymentModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: (method: 'CASH' | 'ECOCASH' | 'CARD' | 'TAB', tabId?: string) => void;
+    onConfirm: (method: 'CASH' | 'ECOCASH' | 'TAB', tabId?: string) => void;
     totalAmount: number;
     subtotal: number;
     tax: number;
@@ -18,7 +18,7 @@ interface PaymentModalProps {
     isLoading: boolean;
 }
 
-type PaymentMethod = 'CASH' | 'ECOCASH' | 'CARD' | 'TAB';
+type PaymentMethod = 'CASH' | 'ECOCASH' | 'TAB';
 type Step = 'METHOD' | 'CASH_TENDERED' | 'SUMMARY' | 'TAB_SELECTION';
 
 export default function PaymentModal({
@@ -132,10 +132,9 @@ export default function PaymentModal({
                                 <p className="text-foreground-muted text-sm mb-1">Total Amount</p>
                                 <p className="text-3xl font-bold text-foreground">${totalAmount.toFixed(2)}</p>
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-3 gap-3">
                                 {[
                                     { method: 'CASH' as PaymentMethod, icon: Banknote, label: 'Cash', color: 'text-success bg-success-muted' },
-                                    { method: 'CARD' as PaymentMethod, icon: CreditCard, label: 'Card', color: 'text-primary bg-primary-muted' },
                                     { method: 'ECOCASH' as PaymentMethod, icon: Smartphone, label: 'EcoCash', color: 'text-warning bg-warning-muted' },
                                     { method: 'TAB' as PaymentMethod, icon: Wallet, label: 'Tab', color: 'text-purple-500 bg-purple-500/10' },
                                 ].map(({ method, icon: Icon, label, color }) => (

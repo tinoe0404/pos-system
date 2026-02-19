@@ -34,7 +34,7 @@ export default function OrdersPage() {
         } as CartItem)),
         total: sale.total,
         date: sale.createdAt,
-        paymentMethod: sale.paymentMethod as 'CASH' | 'ECOCASH' | 'CARD',
+        paymentMethod: sale.paymentMethod as 'CASH' | 'ECOCASH' | 'TAB',
         tax: sale.total * 0.1,
     });
 
