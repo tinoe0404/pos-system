@@ -55,7 +55,7 @@ export default function POSPage() {
     );
 
     return (
-        <div className="p-4 pt-14 md:pt-4 lg:p-6 h-full flex flex-col">
+        <div className="p-4 lg:p-6 h-full flex flex-col">
             {/* Header */}
             <div className="flex flex-col gap-4 mb-5">
                 {/* Search Bar */}
