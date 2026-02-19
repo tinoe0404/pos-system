@@ -11,10 +11,8 @@ const CATEGORY_ORDER = [
     'Soft Drinks',
     'Whiskey',
     'Ma Eats',
+    'Cigarettes',
 ];
-
-// Cigarettes is rendered as a separate section at the bottom
-const CIGARETTES_CATEGORY = 'Cigarettes';
 
 interface StockSheetRow {
     name: string;
@@ -31,6 +29,11 @@ interface StockSheetRow {
 interface CategorySection {
     category: string;
     rows: StockSheetRow[];
+}
+
+interface PaymentBreakdown {
+    cash: number;
+    ecocash: number;
 }
 
 export class StockSheetService {
@@ -112,7 +115,6 @@ export class StockSheetService {
 
         // 5. Sort categories according to CATEGORY_ORDER
         const mainSections: CategorySection[] = [];
-        let cigarettesSection: CategorySection | null = null;
 
         // First, add categories in the defined order
         for (const cat of CATEGORY_ORDER) {
@@ -123,13 +125,6 @@ export class StockSheetService {
             }
         }
 
-        // Pull out cigarettes
-        const cigRows = categoryMap.get(CIGARETTES_CATEGORY);
-        if (cigRows && cigRows.length > 0) {
-            cigarettesSection = { category: CIGARETTES_CATEGORY, rows: cigRows };
-            categoryMap.delete(CIGARETTES_CATEGORY);
-        }
-
         // Add any remaining categories not in CATEGORY_ORDER
         for (const [cat, rows] of categoryMap.entries()) {
             if (rows.length > 0) {
@@ -138,17 +133,39 @@ export class StockSheetService {
         }
 
         // 6. Compute totals for the footer
-        const allRows = [
-            ...mainSections.flatMap((s) => s.rows),
-            ...(cigarettesSection?.rows || []),
-        ];
+        const allRows = mainSections.flatMap((s) => s.rows);
         const totalAmountSold = allRows.reduce((sum, r) => sum + r.amountSold, 0);
+
+        // 7. Compute payment method breakdown from completed sales
+        const completedSales = await prisma.sale.findMany({
+            where: {
+                status: 'COMPLETED',
+                created_at: {
+                    gte: startOfDay,
+                    lte: endOfDay,
+                },
+            },
+            select: {
+                payment_method: true,
+                total: true,
+            },
+        });
+
+        const paymentBreakdown: PaymentBreakdown = { cash: 0, ecocash: 0 };
+        completedSales.forEach((sale) => {
+            const amount = Number(sale.total);
+            if (sale.payment_method === 'CASH') {
+                paymentBreakdown.cash += amount;
+            } else if (sale.payment_method === 'ECOCASH') {
+                paymentBreakdown.ecocash += amount;
+            }
+        });
 
         return {
             date: startOfDay,
             mainSections,
-            cigarettesSection,
             totalAmountSold,
+            paymentBreakdown,
         };
     }
 
@@ -189,15 +206,9 @@ export class StockSheetService {
         // ==================== MAIN TABLE ====================
         this.drawMainTable(doc, data.mainSections, pageWidth);
 
-        // ==================== CIGARETTES SECTION ====================
-        if (data.cigarettesSection) {
-            doc.moveDown(1.5);
-            this.drawCigarettesSection(doc, data.cigarettesSection, pageWidth);
-        }
-
         // ==================== FOOTER ====================
         doc.moveDown(1);
-        this.drawFooter(doc, data.totalAmountSold, pageWidth);
+        this.drawFooter(doc, data.totalAmountSold, data.paymentBreakdown, pageWidth);
 
         doc.end();
         return doc;
@@ -327,54 +338,12 @@ export class StockSheetService {
         doc.y = y;
     }
 
-    private drawCigarettesSection(
-        doc: PDFKit.PDFDocument,
-        section: CategorySection,
-        pageWidth: number
-    ) {
-        let y = doc.y;
-        const startX = 30;
-        const colWidth = pageWidth * 0.25;
-        const rowHeight = 18;
 
-        // Check for page break
-        if (y + rowHeight * (section.rows.length + 2) > doc.page.height - 120) {
-            doc.addPage();
-            y = 30;
-        }
-
-        // Section header
-        doc
-            .fontSize(10)
-            .font('Helvetica-Bold')
-            .fillColor('#000000')
-            .text('Cigarettes', startX, y)
-            .moveDown(0.3);
-
-        y = doc.y;
-
-        // Simple table: just product names with empty cells for manual fill
-        doc.fontSize(7).font('Helvetica');
-        for (const row of section.rows) {
-            if (y + rowHeight > doc.page.height - 120) {
-                doc.addPage();
-                y = 30;
-            }
-
-            doc.rect(startX, y, colWidth, rowHeight).stroke();
-            doc
-                .fillColor('#000000')
-                .text(row.name, startX + 4, y + 5, { width: colWidth - 8 });
-
-            y += rowHeight;
-        }
-
-        doc.y = y;
-    }
 
     private drawFooter(
         doc: PDFKit.PDFDocument,
         totalAmountSold: number,
+        paymentBreakdown: PaymentBreakdown,
         pageWidth: number
     ) {
         let y = doc.y;
@@ -404,10 +373,13 @@ export class StockSheetService {
         );
         y += 25;
 
-        // Payment method boxes
-        const boxWidth = pageWidth / 5;
-        const boxHeight = 28;
-        const methods = ['USD', 'RTGS', 'ECOCASH', 'SWIPE', 'TOKEN'];
+        // Payment method boxes — dynamic from actual sales data
+        const methods = [
+            { label: 'CASH', amount: paymentBreakdown.cash },
+            { label: 'ECOCASH', amount: paymentBreakdown.ecocash },
+        ];
+        const boxWidth = pageWidth / methods.length;
+        const boxHeight = 34;
 
         methods.forEach((method, i) => {
             const bx = startX + i * boxWidth;
@@ -415,15 +387,18 @@ export class StockSheetService {
             doc
                 .fontSize(8)
                 .font('Helvetica-Bold')
-                .text(method, bx, y + 4, {
+                .text(method.label, bx, y + 4, {
                     width: boxWidth,
                     align: 'center',
                 });
-            // Draw a line inside the box for writing
+            // Show actual revenue amount
             doc
-                .moveTo(bx + 5, y + boxHeight - 8)
-                .lineTo(bx + boxWidth - 5, y + boxHeight - 8)
-                .stroke();
+                .fontSize(9)
+                .font('Helvetica')
+                .text(`$${method.amount.toFixed(2)}`, bx, y + 18, {
+                    width: boxWidth,
+                    align: 'center',
+                });
         });
 
         y += boxHeight + 10;
