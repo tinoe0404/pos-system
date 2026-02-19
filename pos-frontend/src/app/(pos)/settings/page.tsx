@@ -1,7 +1,8 @@
 'use client';
 
-import { Printer, Monitor, User, LogOut, CheckCircle2, Keyboard } from 'lucide-react';
+import { Printer, Monitor, User, LogOut, CheckCircle2, Keyboard, Palette, Sun, Moon } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useThemeStore } from '@/store/useThemeStore';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import ReceiptModal from '@/components/pos/ReceiptModal';
@@ -10,6 +11,7 @@ import { CartItem } from '@/store/useCartStore';
 export default function SettingsPage() {
     const router = useRouter();
     const { user, logout } = useAuthStore();
+    const { theme, setTheme, resolvedTheme } = useThemeStore();
     const [showTestReceipt, setShowTestReceipt] = useState(false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -47,6 +49,53 @@ export default function SettingsPage() {
             {/* Content */}
             <main className="flex-1 overflow-auto p-4 lg:p-6">
                 <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Appearance Card — spans full width */}
+                    <div className="bg-card p-5 rounded-xl border border-card-border md:col-span-2">
+                        <div className="flex items-start justify-between mb-4">
+                            <div className="p-2.5 bg-primary-muted text-primary rounded-xl">
+                                <Palette className="w-5 h-5" />
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[11px] font-medium text-foreground-muted bg-background-tertiary px-2.5 py-1 rounded-full">
+                                {resolvedTheme === 'dark' ? <Moon className="w-3 h-3" /> : <Sun className="w-3 h-3" />}
+                                {resolvedTheme === 'dark' ? 'Dark' : 'Light'} Mode
+                            </div>
+                        </div>
+                        <h2 className="text-base font-semibold text-foreground mb-1">Appearance</h2>
+                        <p className="text-sm text-foreground-muted mb-5">
+                            Choose how RetailPOS looks. Select a theme or sync with your system.
+                        </p>
+                        <div className="grid grid-cols-3 gap-3">
+                            {([
+                                { value: 'light' as const, icon: Sun, label: 'Light', desc: 'Clean & bright' },
+                                { value: 'dark' as const, icon: Moon, label: 'Dark', desc: 'Easy on the eyes' },
+                                { value: 'system' as const, icon: Monitor, label: 'System', desc: 'Match your OS' },
+                            ]).map(({ value, icon: Icon, label, desc }) => (
+                                <button
+                                    key={value}
+                                    onClick={() => setTheme(value)}
+                                    className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${theme === value
+                                        ? 'border-primary bg-primary-muted shadow-md shadow-primary/10'
+                                        : 'border-card-border bg-background-secondary hover:border-border-hover hover:bg-background-tertiary'
+                                        }`}
+                                >
+                                    <div className={`p-2.5 rounded-xl transition-colors duration-200 ${theme === value
+                                        ? 'bg-primary text-white'
+                                        : 'bg-background-tertiary text-foreground-muted'
+                                        }`}>
+                                        <Icon className="w-5 h-5" />
+                                    </div>
+                                    <span className="text-sm font-semibold text-foreground">{label}</span>
+                                    <span className="text-[11px] text-foreground-muted leading-tight">{desc}</span>
+                                    {theme === value && (
+                                        <div className="absolute top-2 right-2">
+                                            <CheckCircle2 className="w-4 h-4 text-primary" />
+                                        </div>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     {/* Printer Card */}
                     <div className="bg-card p-5 rounded-xl border border-card-border">
                         <div className="flex items-start justify-between mb-4">

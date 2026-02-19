@@ -29,6 +29,7 @@ export const viewport: Viewport = {
 import Providers from "./providers";
 import { Toaster } from "sonner";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import ThemeProvider from "@/components/ThemeProvider";
 
 export default function RootLayout({
   children,
@@ -36,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
       </head>
@@ -44,7 +45,9 @@ export default function RootLayout({
         className={`${inter.variable} antialiased`}
       >
         <Providers>
-          {children}
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
           <Toaster position="top-center" richColors />
           <ServiceWorkerRegistration />
         </Providers>

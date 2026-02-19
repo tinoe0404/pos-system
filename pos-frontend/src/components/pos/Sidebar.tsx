@@ -2,7 +2,8 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import { LayoutGrid, ClipboardList, Settings, LogOut, Store, Briefcase, FileSpreadsheet, Loader2, Wallet, Menu, X } from 'lucide-react';
+import { useThemeStore } from '@/store/useThemeStore';
+import { LayoutGrid, ClipboardList, Settings, LogOut, Store, Briefcase, FileSpreadsheet, Loader2, Wallet, Menu, X, Sun, Moon } from 'lucide-react';
 import { useState } from 'react';
 import { downloadStockSheetPDF } from '@/hooks/useStockSheet';
 import { toast } from 'sonner';
@@ -15,6 +16,7 @@ export default function Sidebar({ onOpenRegister }: SidebarProps) {
     const router = useRouter();
     const pathname = usePathname();
     const logout = useAuthStore((state) => state.logout);
+    const { resolvedTheme, toggleTheme } = useThemeStore();
     const [isDownloading, setIsDownloading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
 
@@ -89,7 +91,7 @@ export default function Sidebar({ onOpenRegister }: SidebarProps) {
                                 }}
                                 title={item.label}
                                 className={`relative flex flex-col items-center justify-center p-2.5 rounded-xl transition-all duration-200 group ${isActive
-                                    ? 'bg-primary text-foreground shadow-lg shadow-primary/20'
+                                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
                                     : 'text-foreground-muted hover:bg-background-tertiary hover:text-foreground'
                                     }`}
                             >
@@ -145,10 +147,35 @@ export default function Sidebar({ onOpenRegister }: SidebarProps) {
                     </button>
                 </nav>
 
+                {/* Theme Toggle — animated Sun/Moon */}
+                <button
+                    onClick={toggleTheme}
+                    className="mb-2 p-2.5 rounded-xl transition-all duration-300 group relative overflow-hidden text-foreground-muted hover:text-warning hover:bg-warning-muted"
+                    title={resolvedTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                >
+                    <div className="relative w-5 h-5">
+                        <Sun
+                            className={`w-5 h-5 absolute inset-0 transition-all duration-300 ${resolvedTheme === 'light'
+                                ? 'rotate-0 scale-100 opacity-100'
+                                : 'rotate-90 scale-0 opacity-0'
+                                }`}
+                        />
+                        <Moon
+                            className={`w-5 h-5 absolute inset-0 transition-all duration-300 ${resolvedTheme === 'dark'
+                                ? 'rotate-0 scale-100 opacity-100'
+                                : '-rotate-90 scale-0 opacity-0'
+                                }`}
+                        />
+                    </div>
+                    <span className="absolute left-full ml-3 px-2.5 py-1.5 bg-background-tertiary text-foreground text-xs font-medium rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap border border-card-border z-50">
+                        {resolvedTheme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                    </span>
+                </button>
+
                 {/* Logout */}
                 <button
                     onClick={handleLogout}
-                    className="mt-auto p-2.5 text-foreground-muted hover:bg-destructive-muted hover:text-destructive rounded-xl transition-all duration-200 group relative"
+                    className="p-2.5 text-foreground-muted hover:bg-destructive-muted hover:text-destructive rounded-xl transition-all duration-200 group relative"
                     title="Logout"
                 >
                     <LogOut className="w-5 h-5" />
