@@ -39,14 +39,14 @@ export const useReports = () => {
         queryKey: ['reports', 'summary'],
         queryFn: async () => {
             const today = new Date().toISOString().split('T')[0];
-            const res = await api.get<DailyReport>(`/api/reports/daily?date=${today}`);
-            const data = res.data;
-            // Derive payment breakdown from the paymentMethods map
-            const paymentMethods = data.paymentMethods || {};
+            const res = await api.get(`/api/reports/daily?date=${today}`);
+            const data = res.data as Record<string, unknown>;
+            // The backend returns paymentMethodBreakdown with string values
+            const breakdown = (data.paymentMethodBreakdown || {}) as Record<string, string>;
             return {
                 paymentBreakdown: {
-                    cash: (paymentMethods['CASH'] || 0) as number,
-                    ecocash: (paymentMethods['ECOCASH'] || 0) as number,
+                    cash: parseFloat(breakdown.cash || '0'),
+                    ecocash: parseFloat(breakdown.ecocash || '0'),
                 },
             };
         },
