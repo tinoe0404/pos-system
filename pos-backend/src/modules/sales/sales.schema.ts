@@ -32,6 +32,7 @@ export const saleItemResponseSchema = z.object({
   product_id: z.string(),
   quantity: z.number(),
   price_at_sale: z.string(), // Decimal as string
+  productName: z.string().optional(),
 });
 
 // Extended sale item with product details
