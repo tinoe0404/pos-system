@@ -55,7 +55,7 @@ export default function POSPage() {
     );
 
     return (
-        <div className="p-4 lg:p-6 h-full flex flex-col">
+        <div className="p-4 pt-14 md:pt-4 lg:p-6 h-full flex flex-col">
             {/* Header */}
             <div className="flex flex-col gap-4 mb-5">
                 {/* Search Bar */}
@@ -81,15 +81,15 @@ export default function POSPage() {
                             key={category}
                             onClick={() => setSelectedCategory(category)}
                             className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 ${selectedCategory === category
-                                    ? 'bg-primary text-foreground'
-                                    : 'bg-card border border-card-border text-foreground-muted hover:bg-card-hover hover:text-foreground'
+                                ? 'bg-primary text-foreground'
+                                : 'bg-card border border-card-border text-foreground-muted hover:bg-card-hover hover:text-foreground'
                                 }`}
                         >
                             <span>{category === 'all' ? 'All Items' : category}</span>
                             <span
                                 className={`text-[11px] px-1.5 py-0.5 rounded-full ${selectedCategory === category
-                                        ? 'bg-foreground/15 text-foreground'
-                                        : 'bg-background-tertiary text-foreground-subtle'
+                                    ? 'bg-foreground/15 text-foreground'
+                                    : 'bg-background-tertiary text-foreground-subtle'
                                     }`}
                             >
                                 {getCategoryCount(category)}

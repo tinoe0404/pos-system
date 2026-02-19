@@ -6,8 +6,9 @@ import RegisterPanel from '@/components/pos/RegisterPanel';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useThemeStore } from '@/store/useThemeStore';
 import { useCartStore } from '@/store/useCartStore';
-import { Loader2, ShoppingCart, Store, DollarSign, LayoutGrid, ClipboardList, Wallet, Settings } from 'lucide-react';
+import { Loader2, ShoppingCart, Store, DollarSign, LayoutGrid, ClipboardList, Wallet, Settings, Sun, Moon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 export default function POSLayout({ children }: { children: React.ReactNode }) {
@@ -45,7 +46,7 @@ export default function POSLayout({ children }: { children: React.ReactNode }) {
             <Sidebar onOpenRegister={() => setIsRegisterOpen(true)} />
 
             {/* Main Content - add bottom padding on mobile to account for bottom nav */}
-            <main className="flex-1 h-screen overflow-y-auto w-full pb-20 md:pb-0">
+            <main className="flex-1 h-screen overflow-y-auto w-full pb-24 md:pb-0">
                 {children}
             </main>
 
@@ -56,11 +57,11 @@ export default function POSLayout({ children }: { children: React.ReactNode }) {
 
             {/* Mobile Bottom Bar */}
             <div className="fixed bottom-0 left-0 right-0 md:hidden z-40">
-                <div className="glass border-t border-card-border px-2 py-2 flex items-center justify-between">
+                <div className="glass border-t border-card-border px-3 py-2 flex items-center gap-2">
                     <MobileNav onOpenRegister={() => setIsRegisterOpen(true)} />
                     <button
                         onClick={() => setMobileCartOpen(true)}
-                        className={`relative bg-primary text-foreground rounded-xl font-semibold text-sm flex items-center gap-2 active:scale-[0.95] transition-all shadow-lg shadow-primary/25 ${itemCount > 0 ? 'px-4 py-2.5' : 'px-3 py-2'
+                        className={`relative bg-primary text-foreground rounded-xl font-semibold text-sm flex items-center gap-2 active:scale-[0.95] transition-all shadow-lg shadow-primary/25 shrink-0 ${itemCount > 0 ? 'px-4 py-2.5' : 'px-3 py-2.5'
                             }`}
                     >
                         <ShoppingCart className="w-4 h-4" />
@@ -103,6 +104,7 @@ export default function POSLayout({ children }: { children: React.ReactNode }) {
 function MobileNav({ onOpenRegister }: { onOpenRegister: () => void }) {
     const router = useRouter();
     const pathname = usePathname();
+    const { resolvedTheme, toggleTheme } = useThemeStore();
 
     const navItems = [
         { icon: LayoutGrid, label: 'POS', href: '/pos' },
@@ -113,14 +115,14 @@ function MobileNav({ onOpenRegister }: { onOpenRegister: () => void }) {
     ];
 
     return (
-        <div className="flex items-center gap-1">
+        <div className="flex-1 flex items-center justify-around">
             {navItems.map((item) => {
                 const isActive = item.href ? pathname === item.href : false;
                 return (
                     <button
                         key={item.label}
                         onClick={() => item.action ? item.action() : router.push(item.href!)}
-                        className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-medium transition-colors ${isActive
+                        className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg text-[10px] font-medium transition-colors ${isActive
                             ? 'text-primary'
                             : 'text-foreground-muted'
                             }`}
@@ -130,6 +132,14 @@ function MobileNav({ onOpenRegister }: { onOpenRegister: () => void }) {
                     </button>
                 );
             })}
+            {/* Theme Toggle */}
+            <button
+                onClick={toggleTheme}
+                className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg text-[10px] font-medium transition-colors text-foreground-muted"
+            >
+                {resolvedTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                <span>{resolvedTheme === 'dark' ? 'Light' : 'Dark'}</span>
+            </button>
         </div>
     );
 }

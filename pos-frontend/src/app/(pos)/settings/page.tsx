@@ -42,7 +42,7 @@ export default function SettingsPage() {
     return (
         <div className="flex flex-col h-full">
             {/* Header */}
-            <header className="px-6 py-4 border-b border-card-border shrink-0">
+            <header className="px-4 pl-14 md:pl-6 py-4 border-b border-card-border shrink-0">
                 <h1 className="text-lg font-semibold text-foreground">Settings</h1>
             </header>
 

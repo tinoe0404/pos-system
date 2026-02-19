@@ -78,7 +78,7 @@ export default function OrdersPage() {
     return (
         <div className="flex flex-col h-full">
             {/* Header */}
-            <header className="px-6 py-4 border-b border-card-border shrink-0">
+            <header className="px-4 pl-14 md:pl-6 py-4 border-b border-card-border shrink-0">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <h1 className="text-lg font-semibold text-foreground">Transaction History</h1>
                     <div className="relative w-full sm:w-72">
