@@ -10,56 +10,49 @@ export class SalesService {
    */
   async createSale(userId: string, data: CreateSaleInput) {
     try {
-      // Validate all products exist BEFORE creating sale
-      const productIds = data.items.map((item) => item.productId);
-      const products = await prisma.product.findMany({
-        where: {
-          id: {
-            in: productIds,
-          },
-        },
-      });
-
-      // Check if all products were found
-      if (products.length !== productIds.length) {
-        const foundIds = products.map((p) => p.id);
-        const missingIds = productIds.filter((id) => !foundIds.includes(id));
-        throw new Error(`Products not found: ${missingIds.join(', ')}`);
-      }
-
-      // Validate stock availability
-      for (const item of data.items) {
-        const product = products.find((p) => p.id === item.productId);
-        if (product && product.stock < item.quantity) {
-          throw new Error(
-            `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}`
-          );
-        }
-      }
-
-      // Calculate total
+      // Calculate total upfront (no DB needed)
       const total = data.items.reduce(
         (sum, item) => sum + item.priceAtSale * item.quantity,
         0
       );
 
-      // Validate Tab if provided
-      let tab: any = null;
-      if (data.tabId) {
-        tab = await prisma.tab.findUnique({ where: { id: data.tabId } });
-        if (!tab) throw new Error('Tab not found');
-        if (tab.status !== 'ACTIVE') throw new Error('Tab is not active');
-        if (Number(tab.balance) < total) {
-          throw new Error(
-            `Insufficient tab balance. Available: $${Number(tab.balance).toFixed(2)}, Required: $${total.toFixed(2)}`
-          );
-        }
-      }
+      // Single transaction: validate products + stock + create sale + items
+      const result = await prisma.$transaction(async (tx) => {
+        // Validate all products exist AND check stock in one query
+        const productIds = data.items.map((item) => item.productId);
+        const products = await tx.product.findMany({
+          where: { id: { in: productIds } },
+          select: { id: true, name: true, stock: true },
+        });
 
-      // Create sale with items in a transaction
-      const sale = await prisma.$transaction(async (tx) => {
-        // Handle Tab Deduction
-        if (tab) {
+        if (products.length !== productIds.length) {
+          const foundIds = products.map((p) => p.id);
+          const missingIds = productIds.filter((id) => !foundIds.includes(id));
+          throw new Error(`Products not found: ${missingIds.join(', ')}`);
+        }
+
+        // Validate stock availability
+        for (const item of data.items) {
+          const product = products.find((p) => p.id === item.productId);
+          if (product && product.stock < item.quantity) {
+            throw new Error(
+              `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}`
+            );
+          }
+        }
+
+        // Validate Tab if provided
+        if (data.tabId) {
+          const tab = await tx.tab.findUnique({ where: { id: data.tabId } });
+          if (!tab) throw new Error('Tab not found');
+          if (tab.status !== 'ACTIVE') throw new Error('Tab is not active');
+          if (Number(tab.balance) < total) {
+            throw new Error(
+              `Insufficient tab balance. Available: $${Number(tab.balance).toFixed(2)}, Required: $${total.toFixed(2)}`
+            );
+          }
+
+          // Deduct from tab
           const newBalance = Number(tab.balance) - total;
           await tx.tab.update({
             where: { id: tab.id },
@@ -82,10 +75,10 @@ export class SalesService {
         });
 
         // Create tab transaction if using tab
-        if (tab) {
+        if (data.tabId) {
           await tx.tabTransaction.create({
             data: {
-              tab_id: tab.id,
+              tab_id: data.tabId,
               type: 'PURCHASE',
               amount: total,
               sale_id: newSale.id,
@@ -104,65 +97,58 @@ export class SalesService {
           })),
         });
 
-        return newSale;
+        // Return everything we need — no re-fetch required
+        return {
+          id: newSale.id,
+          user_id: newSale.user_id,
+          tab_id: newSale.tab_id,
+          total: total.toString(),
+          status: newSale.status,
+          payment_method: newSale.payment_method,
+          created_at: newSale.created_at,
+          updated_at: newSale.updated_at,
+          items: data.items.map((item, i) => ({
+            id: `${newSale.id}-item-${i}`, // Placeholder ID (real IDs not needed by frontend)
+            sale_id: newSale.id,
+            product_id: item.productId,
+            quantity: item.quantity,
+            price_at_sale: item.priceAtSale.toString(),
+          })),
+        };
       });
 
-      console.log(`📝 Sale ${sale.id} created with status PENDING`);
+      console.log(`📝 Sale ${result.id} created with status PENDING`);
 
-      // Add job to queue for background stock deduction
-      try {
-        await salesQueue.add(
-          'process-stock-deduction',
-          {
-            saleId: sale.id,
-            items: data.items.map((item) => ({
-              productId: item.productId,
-              quantity: item.quantity,
-            })),
-          },
-          {
-            jobId: `sale-${sale.id}`, // Unique job ID to prevent duplicates
-          }
-        );
-        console.log(`🚀 Stock deduction job queued for Sale ${sale.id}`);
-      } catch (queueError) {
-        console.error('❌ Failed to queue stock deduction job. Rolling back sale...', queueError);
-
-        // ROLLBACK: Delete the sale if we can't ensure stock deduction
-        await prisma.sale.delete({
-          where: { id: sale.id },
-        });
-
-        throw new Error('Failed to process sale. System busy, please try again.');
-      }
-
-      // Return sale with items
-      const saleWithItems = await prisma.sale.findUnique({
-        where: { id: sale.id },
-        include: {
-          items: true,
+      // ⚡ Fire-and-forget: Queue stock deduction (don't await)
+      salesQueue.add(
+        'process-stock-deduction',
+        {
+          saleId: result.id,
+          items: data.items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+          })),
         },
+        { jobId: `sale-${result.id}` }
+      ).then(() => {
+        console.log(`🚀 Stock deduction job queued for Sale ${result.id}`);
+      }).catch((queueError) => {
+        console.error('❌ Failed to queue stock deduction job:', queueError);
+        // Sale is already created — mark as FAILED so it can be retried
+        prisma.sale.update({
+          where: { id: result.id },
+          data: { status: 'FAILED' },
+        }).catch((e) => console.error('Failed to mark sale as FAILED:', e));
       });
 
-      // Record sale in cash register ONLY if NOT a tab sale
-      // Tab sales do not increase cash in drawer
+      // ⚡ Fire-and-forget: Record in cash register (only for non-tab sales)
       if (!data.tabId) {
-        try {
-          await registerService.recordSale(userId, Number(sale.total));
-        } catch (regError) {
+        registerService.recordSale(userId, total).catch((regError) => {
           console.error('Failed to record sale to register:', regError);
-          // Don't fail the sale, just log error
-        }
+        });
       }
 
-      return {
-        ...saleWithItems!,
-        total: saleWithItems!.total.toString(),
-        items: saleWithItems!.items.map((item) => ({
-          ...item,
-          price_at_sale: item.price_at_sale.toString(),
-        })),
-      };
+      return result;
     } catch (error) {
       console.error('Error creating sale:', error);
       throw error;
