@@ -18,7 +18,7 @@ export default function LoginPage() {
     const { mutate, isPending } = useMutation({
         mutationFn: async () => {
             setError('');
-            const res = await api.post('/api/auth/login', { username, password });
+            const res = await api.post('/api/auth/login', { username: username.trim(), password: password.trim() });
             return res.data;
         },
         onSuccess: (data) => {
@@ -39,7 +39,7 @@ export default function LoginPage() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!username || !password) {
+        if (!username.trim() || !password.trim()) {
             setError('Please fill in both fields');
             return;
         }
