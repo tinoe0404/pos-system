@@ -6,6 +6,7 @@ import ProductCard from '@/components/pos/ProductCard';
 import { Search, PackageX, Loader2 } from 'lucide-react';
 import { Product } from '@/types/product';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { TapList } from '@/components/pos/TapList';
 
 export default function POSPage() {
     const { data, isLoading } = useProducts();
@@ -74,56 +75,65 @@ export default function POSPage() {
                     </kbd>
                 </div>
 
-                {/* Category Pills */}
-                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                    {categories.map((category) => (
-                        <button
-                            key={category}
-                            onClick={() => setSelectedCategory(category)}
-                            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 ${selectedCategory === category
-                                ? 'bg-primary text-foreground'
-                                : 'bg-card border border-card-border text-foreground-muted hover:bg-card-hover hover:text-foreground'
-                                }`}
-                        >
-                            <span>{category === 'all' ? 'All Items' : category}</span>
-                            <span
-                                className={`text-[11px] px-1.5 py-0.5 rounded-full ${selectedCategory === category
-                                    ? 'bg-foreground/15 text-foreground'
-                                    : 'bg-background-tertiary text-foreground-subtle'
-                                    }`}
-                            >
-                                {getCategoryCount(category)}
-                            </span>
-                        </button>
-                    ))}
+                {/* Main Layout: Products + Taps Sidebar */}
+                <div className="flex flex-1 gap-6 min-h-0 overflow-hidden">
+                    <div className="flex-1 flex flex-col min-h-0">
+                        {/* Category Pills */}
+                        <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar shrink-0">
+                            {categories.map((category) => (
+                                <button
+                                    key={category}
+                                    onClick={() => setSelectedCategory(category)}
+                                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 ${selectedCategory === category
+                                        ? 'bg-primary text-foreground'
+                                        : 'bg-card border border-card-border text-foreground-muted hover:bg-card-hover hover:text-foreground'
+                                        }`}
+                                >
+                                    <span>{category === 'all' ? 'All Items' : category}</span>
+                                    <span
+                                        className={`text-[11px] px-1.5 py-0.5 rounded-full ${selectedCategory === category
+                                            ? 'bg-foreground/15 text-foreground'
+                                            : 'bg-background-tertiary text-foreground-subtle'
+                                            }`}
+                                    >
+                                        {getCategoryCount(category)}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Product Grid */}
+                        {isLoading ? (
+                            <div className="flex-1 flex flex-col items-center justify-center gap-3">
+                                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                                <p className="text-foreground-muted text-sm">Loading products...</p>
+                            </div>
+                        ) : filteredProducts.length > 0 ? (
+                            <div className="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 overflow-y-auto pb-24 md:pb-6 pr-2">
+                                {filteredProducts.map((product: Product) => (
+                                    <div key={product.id} className="stagger-item h-full">
+                                        <ProductCard product={product} />
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="flex-1 flex flex-col items-center justify-center text-foreground-muted">
+                                <div className="bg-background-tertiary p-5 rounded-2xl mb-4">
+                                    <PackageX className="w-8 h-8 text-foreground-subtle" />
+                                </div>
+                                <p className="text-base font-medium text-foreground">No products found</p>
+                                <p className="text-sm text-foreground-muted mt-1">
+                                    Try adjusting your search or category filter
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                    {/* Taps Sidebar - Visible on XL screens */}
+                    <div className="hidden xl:block w-72 shrink-0 overflow-y-auto pr-1">
+                        <TapList />
+                    </div>
                 </div>
             </div>
-
-            {/* Product Grid */}
-            {isLoading ? (
-                <div className="flex-1 flex flex-col items-center justify-center gap-3">
-                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                    <p className="text-foreground-muted text-sm">Loading products...</p>
-                </div>
-            ) : filteredProducts.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 sm:gap-3 overflow-y-auto pb-24 md:pb-6">
-                    {filteredProducts.map((product: Product, i: number) => (
-                        <div key={product.id} className="stagger-item h-full">
-                            <ProductCard product={product} />
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-foreground-muted">
-                    <div className="bg-background-tertiary p-5 rounded-2xl mb-4">
-                        <PackageX className="w-8 h-8 text-foreground-subtle" />
-                    </div>
-                    <p className="text-base font-medium text-foreground">No products found</p>
-                    <p className="text-sm text-foreground-muted mt-1">
-                        Try adjusting your search or category filter
-                    </p>
-                </div>
-            )}
         </div>
     );
 }

@@ -22,7 +22,7 @@ export class SalesService {
         const productIds = data.items.map((item) => item.productId);
         const products = await tx.product.findMany({
           where: { id: { in: productIds } },
-          select: { id: true, name: true, stock: true },
+          select: { id: true, name: true, stock: true, is_tap_item: true, unit_volume: true },
         });
 
         if (products.length !== productIds.length) {
@@ -87,14 +87,55 @@ export class SalesService {
           });
         }
 
-        // Create sale items
-        await tx.saleItem.createMany({
-          data: data.items.map((item) => ({
+        // Create sale items with keg tracking
+        const saleItemsData = [];
+        for (const item of data.items) {
+          const product = products.find((p) => p.id === item.productId);
+          let kegId: string | null = null;
+
+          if (product?.is_tap_item && product.unit_volume) {
+            // Find an active tap with a keg for this product
+            const activeTap = await tx.tap.findFirst({
+              where: {
+                keg: {
+                  product_id: item.productId,
+                  status: 'ACTIVE',
+                },
+                is_active: true,
+              },
+              include: { keg: true },
+            });
+
+            if (activeTap?.keg) {
+              kegId = activeTap.keg.id;
+              const unitVol = Number(product.unit_volume);
+              const totalDeduction = unitVol * item.quantity;
+
+              // Deduct volume from keg
+              const newVolume = Math.max(0, Number(activeTap.keg.current_volume) - totalDeduction);
+              await tx.keg.update({
+                where: { id: kegId },
+                data: {
+                  current_volume: newVolume,
+                  status: newVolume <= 100 ? 'EMPTY' : 'ACTIVE', // Threshold for empty
+                  finished_at: newVolume <= 0 ? new Date() : activeTap.keg.finished_at,
+                },
+              });
+              console.log(`🍺 Deducted ${totalDeduction}ml from Keg ${kegId} (Product: ${product.name})`);
+            }
+          }
+
+          saleItemsData.push({
             sale_id: newSale.id,
             product_id: item.productId,
             quantity: item.quantity,
             price_at_sale: item.priceAtSale,
-          })),
+            keg_id: kegId,
+          });
+        }
+
+        await tx.saleItem.createMany({
+          data: saleItemsData,
         });
 
         // Return everything we need — no re-fetch required

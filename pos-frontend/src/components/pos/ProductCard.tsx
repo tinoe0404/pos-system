@@ -111,7 +111,29 @@ export default function ProductCard({ product }: ProductCardProps) {
                         <h3 className="font-semibold text-foreground line-clamp-2 leading-snug text-sm mb-1">
                             {product.name}
                         </h3>
-                        <p className="text-[11px] text-foreground-subtle font-medium uppercase tracking-wider">
+                        <div className="flex flex-wrap gap-1 mb-2">
+                            {product.abv && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold">
+                                    {product.abv}% ABV
+                                </span>
+                            )}
+                            {product.ibu && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-800 font-bold">
+                                    {product.ibu} IBU
+                                </span>
+                            )}
+                            {product.style && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 font-medium">
+                                    {product.style}
+                                </span>
+                            )}
+                        </div>
+                        {product.brewery && (
+                            <p className="text-[11px] text-foreground-subtle font-medium truncate">
+                                {product.brewery}
+                            </p>
+                        )}
+                        <p className="text-[11px] text-foreground-subtle font-medium uppercase tracking-wider mt-1">
                             {product.category || 'General'}
                         </p>
                     </div>

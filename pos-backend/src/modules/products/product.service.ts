@@ -16,6 +16,12 @@ type SerializedProduct = {
   sku: string;
   category: string | null;
   is_active: boolean;
+  abv: string | null;
+  ibu: number | null;
+  brewery: string | null;
+  style: string | null;
+  is_tap_item: boolean;
+  unit_volume: string | null;
   created_at: Date;
   updated_at: Date;
 };
@@ -49,6 +55,12 @@ export class ProductService {
       const serializedProducts: SerializedProduct[] = products.map((p) => ({
         ...p,
         price: p.price.toString(),
+        abv: p.abv ? p.abv.toString() : null,
+        unit_volume: p.unit_volume ? p.unit_volume.toString() : null,
+        ibu: p.ibu,
+        brewery: p.brewery,
+        style: p.style,
+        is_tap_item: p.is_tap_item,
       }));
 
       // Save to Redis cache
@@ -85,6 +97,8 @@ export class ProductService {
       return {
         ...product,
         price: product.price.toString(),
+        abv: product.abv ? product.abv.toString() : null,
+        unit_volume: product.unit_volume ? product.unit_volume.toString() : null,
       };
     } catch (error) {
       console.error('Error fetching product:', error);
@@ -106,6 +120,12 @@ export class ProductService {
           sku: data.sku,
           category: data.category,
           is_active: data.is_active,
+          abv: data.abv,
+          ibu: data.ibu,
+          brewery: data.brewery,
+          style: data.style,
+          is_tap_item: data.is_tap_item,
+          unit_volume: data.unit_volume,
         },
       });
 
@@ -116,6 +136,8 @@ export class ProductService {
       return {
         ...product,
         price: product.price.toString(),
+        abv: product.abv ? product.abv.toString() : null,
+        unit_volume: product.unit_volume ? product.unit_volume.toString() : null,
       };
     } catch (error: unknown) {
       // Check for unique constraint violation (duplicate SKU)
@@ -146,6 +168,14 @@ export class ProductService {
       if (data.category !== undefined) updateData.category = data.category;
       if (data.is_active !== undefined) updateData.is_active = data.is_active;
 
+      // Beer-specific fields
+      if (data.abv !== undefined) updateData.abv = data.abv;
+      if (data.ibu !== undefined) updateData.ibu = data.ibu;
+      if (data.brewery !== undefined) updateData.brewery = data.brewery;
+      if (data.style !== undefined) updateData.style = data.style;
+      if (data.is_tap_item !== undefined) updateData.is_tap_item = data.is_tap_item;
+      if (data.unit_volume !== undefined) updateData.unit_volume = data.unit_volume;
+
       const product = await prisma.product.update({
         where: { id },
         data: updateData,
@@ -158,6 +188,8 @@ export class ProductService {
       return {
         ...product,
         price: product.price.toString(),
+        abv: product.abv ? product.abv.toString() : null,
+        unit_volume: product.unit_volume ? product.unit_volume.toString() : null,
       };
     } catch (error: unknown) {
       // Check for record not found

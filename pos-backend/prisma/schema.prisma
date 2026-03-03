@@ -45,6 +45,13 @@ enum TabTransactionType {
   CASHOUT
 }
 
+enum KegStatus {
+  NEW
+  ACTIVE
+  EMPTY
+  TAP_RESERVED
+}
+
 model User {
   id            String   @id @default(cuid())
   username      String   @unique
@@ -76,13 +83,22 @@ model Product {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
-  sale_items SaleItem[]
+  // Beer-specific fields
+  abv         Decimal? @db.Decimal(4, 1)
+  ibu         Int?
+  brewery     String?
+  style       String?
+  is_tap_item Boolean  @default(false)
+  unit_volume Decimal? @db.Decimal(10, 2) // in ml, e.g. 500 for a pint
+
+  sale_items   SaleItem[]
   refund_items RefundItem[]
+  kegs         Keg[]
 
   @@map("products")
   @@index([sku])
   @@index([category])
-  @@index([stock]) // Index for low stock queries
+  @@index([stock])
 }
 
 model Sale {
@@ -120,13 +136,16 @@ model SaleItem {
   product_id    String
   quantity      Int
   price_at_sale Decimal @db.Decimal(10, 2)
+  keg_id        String?
 
   sale    Sale    @relation(fields: [sale_id], references: [id], onDelete: Cascade)
   product Product @relation(fields: [product_id], references: [id])
+  keg     Keg?    @relation(fields: [keg_id], references: [id])
 
   @@map("sale_items")
   @@index([sale_id])
   @@index([product_id])
+  @@index([keg_id])
 }
 
 enum RefundStatus {
@@ -233,4 +252,36 @@ model TabTransaction {
 
   @@map("tab_transactions")
   @@index([tab_id])
+}
+
+model Keg {
+  id             String    @id @default(cuid())
+  product_id     String
+  total_volume   Decimal   @db.Decimal(10, 2)
+  current_volume Decimal   @db.Decimal(10, 2)
+  status         KegStatus @default(NEW)
+  tapped_at      DateTime?
+  finished_at    DateTime?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  product    Product    @relation(fields: [product_id], references: [id])
+  sale_items SaleItem[]
+  tap        Tap?
+
+  @@map("kegs")
+  @@index([product_id])
+  @@index([status])
+}
+
+model Tap {
+  id         Int      @id // Tap number (1, 2, 3...)
+  keg_id     String?  @unique
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  keg Keg? @relation(fields: [keg_id], references: [id])
+
+  @@map("taps")
 }

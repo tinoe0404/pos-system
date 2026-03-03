@@ -29,6 +29,7 @@ import registerRoutes from './modules/register/register.routes';
 import { refundRoutes } from './modules/refunds/refund.routes';
 import stockSheetRoutes from './modules/stocksheet/stocksheet.routes';
 import tabRoutes from './modules/tabs/tabs.routes';
+import kegRoutes from './modules/kegs/keg.routes';
 import prisma from './shared/prisma';
 import redis from './shared/redis';
 
@@ -158,6 +159,8 @@ export async function buildApp() {
         notifications: '/api/notifications',
         recommendations: '/api/recommendations',
         reports: '/api/reports',
+        kegs: '/api/kegs',
+        taps: '/api/taps',
       },
     };
   });
@@ -176,6 +179,7 @@ export async function buildApp() {
   await app.register(refundRoutes, { prefix: '/api' });
   await app.register(stockSheetRoutes, { prefix: '/api/reports/stock-sheet' });
   await app.register(tabRoutes, { prefix: '/api/tabs' });
+  await app.register(kegRoutes, { prefix: '/api' });
 
   return app;
 }
