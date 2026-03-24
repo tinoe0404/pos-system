@@ -74,23 +74,45 @@ export class StockSheetService {
 
         // 3. Aggregate sold quantities per product
         const soldMap = new Map<string, number>();
-        saleItems.forEach((item) => {
+        saleItems.forEach((item: { product_id: string; quantity: number }) => {
             const current = soldMap.get(item.product_id) || 0;
             soldMap.set(item.product_id, current + item.quantity);
+        });
+
+        // 3b. Get all restock movements for the day
+        const restockMovements = await prisma.stockMovement.findMany({
+            where: {
+                type: 'RESTOCK',
+                created_at: {
+                    gte: startOfDay,
+                    lte: endOfDay,
+                },
+            },
+            select: {
+                product_id: true,
+                quantity_change: true,
+            },
+        });
+
+        // 3c. Aggregate restock quantities per product
+        const restockMap = new Map<string, number>();
+        restockMovements.forEach((movement: { product_id: string; quantity_change: number }) => {
+            const current = restockMap.get(movement.product_id) || 0;
+            restockMap.set(movement.product_id, current + movement.quantity_change);
         });
 
         // 4. Build rows per product
         const categoryMap = new Map<string, StockSheetRow[]>();
 
-        products.forEach((product) => {
+        products.forEach((product: any) => {
             const category = product.category || 'Other';
             const stockSold = soldMap.get(product.id) || 0;
             const closingStock = product.stock;
             const unitPrice = Number(product.price);
 
-            // Opening stock = closing + sold (approximation without add-new tracking)
-            const openingStock = closingStock + stockSold;
-            const addNewStock = 0; // No restock tracking model yet
+            // Opening stock = closing + sold - restocked
+            const addNewStock = restockMap.get(product.id) || 0;
+            const openingStock = closingStock + stockSold - addNewStock;
             const totalStock = openingStock + addNewStock;
             const amountSold = stockSold * unitPrice;
             const shortFalls = totalStock - stockSold - closingStock;
@@ -152,7 +174,7 @@ export class StockSheetService {
         });
 
         const paymentBreakdown: PaymentBreakdown = { cash: 0, ecocash: 0 };
-        completedSales.forEach((sale) => {
+        completedSales.forEach((sale: any) => {
             const amount = Number(sale.total);
             if (sale.payment_method === 'CASH') {
                 paymentBreakdown.cash += amount;
@@ -172,7 +194,7 @@ export class StockSheetService {
     /**
      * Generate the TCP Investments Daily Stock Sheet PDF
      */
-    async generateStockSheetPDF(dateString?: string): Promise<PDFKit.PDFDocument> {
+    async generateStockSheetPDF(dateString?: string): Promise<typeof PDFDocument> {
         const data = await this.getStockSheetData(dateString);
 
         const doc = new PDFDocument({
@@ -217,7 +239,7 @@ export class StockSheetService {
     // ====================== DRAWING HELPERS ======================
 
     private drawMainTable(
-        doc: PDFKit.PDFDocument,
+        doc: typeof PDFDocument | any,
         sections: CategorySection[],
         pageWidth: number
     ) {
@@ -341,7 +363,7 @@ export class StockSheetService {
 
 
     private drawFooter(
-        doc: PDFKit.PDFDocument,
+        doc: typeof PDFDocument | any,
         totalAmountSold: number,
         paymentBreakdown: PaymentBreakdown,
         pageWidth: number

@@ -66,13 +66,25 @@ async function processStockDeduction(job: Job<StockDeductionJobData>) {
           );
         }
 
-        // Decrement stock
+        // Decrement stock and record stock movement
         await tx.product.update({
           where: { id: item.productId },
           data: {
             stock: {
               decrement: item.quantity,
             },
+          },
+        });
+
+        await tx.stockMovement.create({
+          data: {
+            product_id: item.productId,
+            type: 'SALE',
+            quantity_change: -item.quantity,
+            previous_stock: product.stock,
+            new_stock: product.stock - item.quantity,
+            reference_id: saleId,
+            created_by: saleExists.user_id,
           },
         });
 

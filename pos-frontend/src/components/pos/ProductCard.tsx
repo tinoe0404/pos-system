@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Product } from '@/types/product';
 import { useCartStore } from '@/store/useCartStore';
 import { Plus, Minus, Package, X } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ProductCardProps {
     product: Product;
@@ -22,7 +23,11 @@ export default function ProductCard({ product }: ProductCardProps) {
 
     const handleAdd = () => {
         if (isOutOfStock || longPressTriggered.current) return;
-        addItem({ ...product, price: Number(product.price) });
+        const added = addItem({ ...product, price: Number(product.price), stock: product.stock });
+        if (!added) {
+            toast.error(`Only ${product.stock} in stock`);
+            return;
+        }
         setJustAdded(true);
         setTimeout(() => setJustAdded(false), 400);
     };
@@ -46,7 +51,11 @@ export default function ProductCard({ product }: ProductCardProps) {
 
     const handleQuickAdd = () => {
         for (let i = 0; i < quickQty; i++) {
-            addItem({ ...product, price: Number(product.price) });
+            const added = addItem({ ...product, price: Number(product.price), stock: product.stock });
+            if (!added) {
+                toast.error(`Only ${product.stock} in stock`);
+                break;
+            }
         }
         setShowQuantityPicker(false);
         setJustAdded(true);

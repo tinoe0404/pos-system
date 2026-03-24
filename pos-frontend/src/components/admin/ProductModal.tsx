@@ -125,14 +125,9 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                             {errors.stock && <p className="text-destructive text-xs">{errors.stock.message}</p>}
                         </div>
                     </div>
+
+                    {/* Min Stock and Category */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <label className="block text-sm font-medium text-foreground-muted">
-                                Stock <span className="text-destructive">*</span>
-                            </label>
-                            <input {...register('stock', { valueAsNumber: true })} type="number" className={inputClass} placeholder="0" />
-                            {errors.stock && <p className="text-destructive text-xs">{errors.stock.message}</p>}
-                        </div>
                         <div className="space-y-1.5">
                             <label className="block text-sm font-medium text-foreground-muted">
                                 Min Stock <span className="text-destructive">*</span>
@@ -140,13 +135,11 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                             <input {...register('min_stock', { valueAsNumber: true })} type="number" className={inputClass} placeholder="10" />
                             {errors.min_stock && <p className="text-destructive text-xs">{errors.min_stock.message}</p>}
                         </div>
-                    </div>
-
-                    {/* Category */}
-                    <div className="space-y-1.5">
-                        <label className="block text-sm font-medium text-foreground-muted">Category</label>
-                        <input {...register('category')} type="text" className={inputClass} placeholder="e.g., Electronics, Food, etc." />
-                        {errors.category && <p className="text-destructive text-xs">{errors.category.message}</p>}
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-medium text-foreground-muted">Category</label>
+                            <input {...register('category')} type="text" className={inputClass} placeholder="e.g., Clear Beers Quarts" />
+                            {errors.category && <p className="text-destructive text-xs">{errors.category.message}</p>}
+                        </div>
                     </div>
 
                     {/* Description */}

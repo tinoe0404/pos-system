@@ -104,7 +104,7 @@ export default function RegisterPanel({ isOpen, onClose }: RegisterPanelProps) {
         if (!register?.logs) return { cashSales: 0, cashIn: 0, cashOut: 0, expected: 0 };
         let cashSales = 0, totalIn = 0, totalOut = 0;
 
-        register.logs.forEach((log: any) => {
+        register.logs.forEach((log: { type: string; amount: string | number }) => {
             const amt = Number(log.amount);
             if (log.type === 'SALE') cashSales += amt;
             if (log.type === 'CASH_IN') totalIn += amt;
@@ -254,7 +254,14 @@ export default function RegisterPanel({ isOpen, onClose }: RegisterPanelProps) {
     );
 }
 
-function StatBox({ label, value, className, valueClass }: any) {
+interface StatBoxProps {
+    label: string;
+    value: number;
+    className?: string;
+    valueClass?: string;
+}
+
+function StatBox({ label, value, className, valueClass }: StatBoxProps) {
     return (
         <div className={cn("bg-background-primary p-3 rounded-xl border border-card-border", className)}>
             <div className="text-xs text-foreground-subtle mb-1">{label}</div>

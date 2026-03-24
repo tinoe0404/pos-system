@@ -52,6 +52,14 @@ enum KegStatus {
   TAP_RESERVED
 }
 
+enum StockMovementType {
+  RESTOCK
+  ADJUSTMENT
+  SALE
+  VOID
+  INITIAL
+}
+
 model User {
   id            String   @id @default(cuid())
   username      String   @unique
@@ -94,6 +102,7 @@ model Product {
   sale_items   SaleItem[]
   refund_items RefundItem[]
   kegs         Keg[]
+  movements    StockMovement[]
 
   @@map("products")
   @@index([sku])
@@ -284,4 +293,25 @@ model Tap {
   keg Keg? @relation(fields: [keg_id], references: [id])
 
   @@map("taps")
+}
+
+model StockMovement {
+  id              String            @id @default(cuid())
+  product_id      String
+  type            StockMovementType
+  quantity_change Int
+  previous_stock  Int
+  new_stock       Int
+  reason          String?
+  reference_id    String?
+  created_by      String?
+  created_at      DateTime          @default(now())
+
+  product Product @relation(fields: [product_id], references: [id])
+
+  @@map("stock_movements")
+  @@index([product_id])
+  @@index([type])
+  @@index([created_at])
+  @@index([product_id, created_at])
 }

@@ -3,12 +3,15 @@ import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
   restockSchema,
   adjustStockSchema,
+  stockHistoryQuerySchema,
   inventoryOperationResponseSchema,
 } from './inventory.schema';
 import {
   restockProductHandler,
   adjustStockHandler,
   getLowStockHandler,
+  getStockHistoryHandler,
+  getAnalyticsHandler,
 } from './inventory.controller';
 import { authenticate, requireRole } from '../auth/auth.middleware';
 
@@ -52,6 +55,27 @@ async function inventoryRoutes(app: FastifyInstance) {
       onRequest: [authenticate, requireRole('admin')],
     },
     getLowStockHandler
+  );
+
+  // GET /api/inventory/history - Get stock movement history (Protected: Admin only)
+  server.get(
+    '/history',
+    {
+      onRequest: [authenticate, requireRole('admin')],
+      schema: {
+        querystring: stockHistoryQuerySchema,
+      },
+    },
+    getStockHistoryHandler
+  );
+
+  // GET /api/inventory/analytics - Get comprehensive analytics (Protected: Admin only)
+  server.get(
+    '/analytics',
+    {
+      onRequest: [authenticate, requireRole('admin')],
+    },
+    getAnalyticsHandler
   );
 }
 

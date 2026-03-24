@@ -6,6 +6,12 @@ import { CartItem } from '@/store/useCartStore';
 import { toast } from 'sonner';
 import TabsPanel from './TabsPanel';
 
+interface SelectedTab {
+    id: string;
+    customer_name: string;
+    balance: string | number;
+}
+
 interface PaymentModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -27,7 +33,7 @@ export default function PaymentModal({
     const [step, setStep] = useState<Step>('METHOD');
     const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
     const [cashTendered, setCashTendered] = useState('');
-    const [selectedTab, setSelectedTab] = useState<any | null>(null);
+    const [selectedTab, setSelectedTab] = useState<SelectedTab | null>(null);
 
     useEffect(() => {
         if (!isOpen) {
@@ -51,7 +57,7 @@ export default function PaymentModal({
         }
     };
 
-    const handleTabSelected = (tab: any) => {
+    const handleTabSelected = (tab: SelectedTab) => {
         if (Number(tab.balance) < totalAmount) {
             toast.error(`Insufficient balance. Tab has $${Number(tab.balance).toFixed(2)}, order is $${totalAmount.toFixed(2)}`);
             return;

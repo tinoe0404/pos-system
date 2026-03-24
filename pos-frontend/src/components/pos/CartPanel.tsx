@@ -13,6 +13,9 @@ import { toast } from 'sonner';
 import PaymentModal from './PaymentModal';
 import ReceiptModal from './ReceiptModal';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { STORE_CONFIG } from '@/config/store';
+
+const TAX_RATE = STORE_CONFIG.taxRate;
 
 interface CartPanelProps {
     onCheckoutComplete?: () => void;
@@ -53,7 +56,7 @@ export default function CartPanel({ onCheckoutComplete, onClose }: CartPanelProp
         ? subtotal * (discount.value / 100)
         : Math.min(discount.value, subtotal);
     const afterDiscount = subtotal - discountAmount;
-    const tax = afterDiscount * 0.1;
+    const tax = afterDiscount * TAX_RATE;
     const finalTotal = afterDiscount + tax;
 
     const handleChargeClick = useCallback(() => {
@@ -73,16 +76,11 @@ export default function CartPanel({ onCheckoutComplete, onClose }: CartPanelProp
     const handleResumeOrder = useCallback((orderId: string) => {
         const order = heldOrders.find((o) => o.id === orderId);
         if (!order) return;
+        // Auto-hold current cart if it has items
         if (items.length > 0) {
             holdOrder([...items], 'Auto-held');
         }
-        order.items.forEach((item) => {
-            for (let i = 0; i < item.quantity; i++) {
-                useCartStore.getState().addItem({ id: item.id, name: item.name, price: item.price });
-            }
-        });
-        // Fix quantities (addItem increments by 1 each time)
-        // Actually let's clear and set properly
+        // Clear and restore the held order
         clearCart();
         order.items.forEach((item) => {
             useCartStore.getState().addItem({ id: item.id, name: item.name, price: item.price });
@@ -105,10 +103,8 @@ export default function CartPanel({ onCheckoutComplete, onClose }: CartPanelProp
     const handleConfirmPayment = (paymentMethod: 'CASH' | 'ECOCASH' | 'TAB', tabId?: string) => {
         setIsPaymentModalOpen(false);
 
-        const method = paymentMethod;
-
         createOrder(
-            { items, paymentMethod: method, tabId },
+            { items, paymentMethod, tabId, discount: discountAmount },
             {
                 onSuccess: (data) => {
                     setLastOrder({
@@ -310,7 +306,7 @@ export default function CartPanel({ onCheckoutComplete, onClose }: CartPanelProp
                             </div>
                         )}
                         <div className="flex justify-between text-sm text-foreground-muted">
-                            <span>Tax (10%)</span>
+                            <span>Tax ({(TAX_RATE * 100).toFixed(0)}%)</span>
                             <span>${tax.toFixed(2)}</span>
                         </div>
                         <div className="h-px bg-card-border my-1" />

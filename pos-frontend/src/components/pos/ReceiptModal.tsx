@@ -4,6 +4,7 @@ import { X, Printer, CheckCircle2, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import QRCode from 'react-qr-code';
 import { CartItem } from '@/store/useCartStore';
+import { STORE_CONFIG } from '@/config/store';
 
 interface ReceiptModalProps {
     isOpen: boolean;
@@ -55,9 +56,9 @@ export default function ReceiptModal({ isOpen, onClose, order, autoPrint = false
                 {/* Receipt Content */}
                 <div id="receipt-content" className="p-6 print:p-4 print:bg-white">
                     <div className="text-center mb-4 print:mb-3">
-                        <h1 className="text-xl font-bold text-foreground mb-1 print:text-lg print:text-black">RETAILPOS</h1>
-                        <p className="text-[11px] text-foreground-muted print:text-black">123 Store Address, City</p>
-                        <p className="text-[11px] text-foreground-muted print:text-black">Tel: +123 456 7890</p>
+                        <h1 className="text-xl font-bold text-foreground mb-1 print:text-lg print:text-black">{STORE_CONFIG.name}</h1>
+                        <p className="text-[11px] text-foreground-muted print:text-black">{STORE_CONFIG.address}</p>
+                        <p className="text-[11px] text-foreground-muted print:text-black">Tel: {STORE_CONFIG.phone}</p>
                     </div>
 
                     <div className="border-b border-dashed border-card-border my-3 print:border-black" />

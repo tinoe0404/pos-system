@@ -11,10 +11,13 @@ export class SalesService {
   async createSale(userId: string, data: CreateSaleInput) {
     try {
       // Calculate total upfront (no DB needed)
-      const total = data.items.reduce(
+      const itemsTotal = data.items.reduce(
         (sum, item) => sum + item.priceAtSale * item.quantity,
         0
       );
+      // Apply discount if provided
+      const discountAmount = data.discount && data.discount > 0 ? Math.min(data.discount, itemsTotal) : 0;
+      const total = itemsTotal - discountAmount;
 
       // Single transaction: validate products + stock + create sale + items
       const result = await prisma.$transaction(async (tx) => {
@@ -227,16 +230,35 @@ export class SalesService {
           } as any, // Type assertions for new fields
         });
 
-        // Restore stock
+        // Restore stock and record stock movement
         for (const item of sale.items) {
-          await tx.product.update({
+          const product = await tx.product.findUnique({
             where: { id: item.product_id },
-            data: {
-              stock: {
-                increment: item.quantity,
-              },
-            },
           });
+
+          if (product) {
+            await tx.product.update({
+              where: { id: item.product_id },
+              data: {
+                stock: {
+                  increment: item.quantity,
+                },
+              },
+            });
+
+            await tx.stockMovement.create({
+              data: {
+                product_id: item.product_id,
+                type: 'VOID',
+                quantity_change: item.quantity,
+                previous_stock: product.stock,
+                new_stock: product.stock + item.quantity,
+                reason: reason,
+                reference_id: saleId,
+                created_by: voidedById,
+              },
+            });
+          }
         }
       });
 

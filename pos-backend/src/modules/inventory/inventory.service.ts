@@ -21,15 +21,27 @@ export class InventoryService {
 
       const previousStock = product.stock;
 
-      // Increment stock
-      const updatedProduct = await prisma.product.update({
-        where: { id: data.productId },
-        data: {
-          stock: {
-            increment: data.quantity,
+      // Use a transaction to update stock and record movement
+      const [updatedProduct] = await prisma.$transaction([
+        prisma.product.update({
+          where: { id: data.productId },
+          data: {
+            stock: {
+              increment: data.quantity,
+            },
           },
-        },
-      });
+        }),
+        prisma.stockMovement.create({
+          data: {
+            product_id: data.productId,
+            type: 'RESTOCK',
+            quantity_change: data.quantity,
+            previous_stock: previousStock,
+            new_stock: previousStock + data.quantity,
+            created_by: data.userId,
+          },
+        }),
+      ]);
 
       // Invalidate cache
       await redis.del(CACHE_KEY);
@@ -79,14 +91,28 @@ export class InventoryService {
       }
 
       const previousStock = product.stock;
+      const quantityChange = data.quantity - previousStock;
 
-      // Set stock explicitly
-      const updatedProduct = await prisma.product.update({
-        where: { id: data.productId },
-        data: {
-          stock: data.quantity,
-        },
-      });
+      // Set stock explicitly and record movement
+      const [updatedProduct] = await prisma.$transaction([
+        prisma.product.update({
+          where: { id: data.productId },
+          data: {
+            stock: data.quantity,
+          },
+        }),
+        prisma.stockMovement.create({
+          data: {
+            product_id: data.productId,
+            type: 'ADJUSTMENT',
+            quantity_change: quantityChange,
+            previous_stock: previousStock,
+            new_stock: data.quantity,
+            reason: data.reason,
+            created_by: data.userId,
+          },
+        }),
+      ]);
 
       // Invalidate cache
       await redis.del(CACHE_KEY);
@@ -144,6 +170,41 @@ export class InventoryService {
       console.error('Error fetching low stock products:', error);
       throw error;
     }
+  }
+
+  /**
+   * Get paginated stock movement history
+   */
+  async getStockHistory(filters: { productId?: string; type?: any }, page: number, limit: number) {
+    const where: any = {};
+    if (filters.productId) where.product_id = filters.productId;
+    if (filters.type) where.type = filters.type;
+
+    const [movements, total] = await Promise.all([
+      prisma.stockMovement.findMany({
+        where,
+        orderBy: { created_at: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          product: {
+            select: { name: true, sku: true },
+          },
+        },
+      }),
+      prisma.stockMovement.count({ where }),
+    ]);
+
+    // Populate user names if needed, but for now we just return created_by
+    return {
+      movements,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 }
 
