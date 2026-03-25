@@ -3,7 +3,7 @@ import { buildApp } from './app';
 import prisma from './shared/prisma';
 import redis from './shared/redis';
 import { salesWorker } from './shared/queue';
-
+import { startTransactionCleanupJob } from './modules/sales/sales.cleanup';
 
 async function start() {
   try {
@@ -23,6 +23,9 @@ async function start() {
 
     console.log(`🚀 Server running at http://${host}:${port}`);
     console.log('🔄 Sales worker is processing jobs in the background');
+    
+    // Start background jobs
+    startTransactionCleanupJob();
   } catch (err) {
     console.error('❌ Server startup error:', err);
     process.exit(1);

@@ -76,10 +76,10 @@ export default function POSPage() {
                 </div>
 
                 {/* Main Layout: Products + Taps Sidebar */}
-                <div className="flex flex-1 gap-6 min-h-0 overflow-hidden">
-                    <div className="flex-1 flex flex-col min-h-0">
+                <div className="flex flex-1 gap-6 min-h-0 w-full overflow-hidden">
+                    <div className="flex-1 flex flex-col min-h-0 min-w-0">
                         {/* Category Pills */}
-                        <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar shrink-0">
+                        <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar shrink-0 w-full">
                             {categories.map((category) => (
                                 <button
                                     key={category}
@@ -109,7 +109,7 @@ export default function POSPage() {
                                 <p className="text-foreground-muted text-sm">Loading products...</p>
                             </div>
                         ) : filteredProducts.length > 0 ? (
-                            <div className="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 overflow-y-auto pb-24 md:pb-6 pr-2">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3 overflow-y-auto pb-24 md:pb-6 pr-2">
                                 {filteredProducts.map((product: Product) => (
                                     <div key={product.id} className="stagger-item h-full">
                                         <ProductCard product={product} />

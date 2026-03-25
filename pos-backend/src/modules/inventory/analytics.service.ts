@@ -1,5 +1,5 @@
 import prisma from '../../shared/prisma';
-import { redisSession } from '../../shared/redis';
+import redis from '../../shared/redis';
 
 export const analyticsService = {
   /**
@@ -7,7 +7,7 @@ export const analyticsService = {
    */
   async getInventoryAnalytics(days: number = 30) {
     const cacheKey = `analytics:inventory:${days}`;
-    const cached = await redisSession.get(cacheKey);
+    const cached = await redis.get(cacheKey);
     if (cached) {
       return JSON.parse(cached);
     }
@@ -17,7 +17,7 @@ export const analyticsService = {
 
     // 1. Total Valuation & Low Stock Count
     const products = await prisma.product.findMany({
-      where: { active: true },
+      where: { is_active: true },
     });
 
     let totalValuation = 0;
@@ -39,7 +39,6 @@ export const analyticsService = {
       by: ['product_id'],
       _sum: {
         quantity: true,
-        total: true,
       },
       where: {
         sale: {
@@ -62,7 +61,7 @@ export const analyticsService = {
         name: product?.name || 'Unknown Product',
         sku: product?.sku || 'N/A',
         quantity_sold: item._sum.quantity || 0,
-        revenue: Number(item._sum.total) || 0,
+        revenue: (item._sum.quantity || 0) * Number(product?.price || 0),
       };
     });
 
@@ -143,7 +142,7 @@ export const analyticsService = {
     };
 
     // Cache for 15 minutes
-    await redisSession.set(cacheKey, JSON.stringify(result), 'EX', 900);
+    await redis.set(cacheKey, JSON.stringify(result), 'EX', 900);
 
     return result;
   },

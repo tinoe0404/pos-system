@@ -140,23 +140,24 @@ export default function InventoryAnalyticsPage() {
                         {topMovingItems.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={topMovingItems} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--card-border))" />
-                                    <XAxis type="number" textAnchor="end" tick={{ fill: 'hsl(var(--foreground-muted))', fontSize: 12 }} />
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="rgba(255,255,255,0.08)" />
+                                    <XAxis type="number" textAnchor="end" tick={{ fill: '#94a3b8', fontSize: 12 }} />
                                     <YAxis 
                                         type="category" 
                                         dataKey="name" 
                                         width={120}
-                                        tick={{ fill: 'hsl(var(--foreground-subtle))', fontSize: 12 }} 
+                                        tick={{ fill: '#cbd5e1', fontSize: 12 }} 
                                     />
                                     <Tooltip 
-                                        cursor={{ fill: 'hsl(var(--background-tertiary))' }}
-                                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--card-border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }}
-                                        itemStyle={{ color: 'hsl(var(--primary))' }}
+                                        cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                                        contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '8px', color: '#f1f5f9' }}
+                                        itemStyle={{ color: '#818cf8' }}
                                     />
-                                    <Bar dataKey="quantity_sold" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]}>
-                                        {topMovingItems.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill="hsl(var(--primary))" />
-                                        ))}
+                                    <Bar dataKey="quantity_sold" radius={[0, 6, 6, 0]}>
+                                        {topMovingItems.map((_, index) => {
+                                            const colors = ['#6366f1', '#8b5cf6', '#a78bfa', '#c084fc', '#e879f9'];
+                                            return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                                        })}
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>

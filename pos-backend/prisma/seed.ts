@@ -95,7 +95,7 @@ async function main() {
 
   const admin = await prisma.user.upsert({
     where: { username: 'admin' },
-    update: {},
+    update: { password_hash: adminPassword, role: 'admin', is_active: true },
     create: {
       username: 'admin',
       password_hash: adminPassword,
@@ -105,7 +105,7 @@ async function main() {
 
   const cashier = await prisma.user.upsert({
     where: { username: 'cashier' },
-    update: {},
+    update: { password_hash: cashierPassword, role: 'cashier', is_active: true },
     create: {
       username: 'cashier',
       password_hash: cashierPassword,
