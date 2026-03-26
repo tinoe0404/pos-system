@@ -1,1 +1,9 @@
 node_modules
+dist
+.env
+.env.local
+*.log
+*.txt
+!README.md
+!tsconfig.json
+!vitest.config.ts
