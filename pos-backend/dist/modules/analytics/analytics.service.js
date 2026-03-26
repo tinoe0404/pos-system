@@ -1,8 +1,10 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.analyticsService = exports.AnalyticsService = void 0;
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = __importDefault(require("../../shared/prisma"));
 class AnalyticsService {
     /**
      * Get daily summary - Total revenue, transactions, and stock for TODAY
@@ -15,7 +17,7 @@ class AnalyticsService {
             const endOfDay = new Date();
             endOfDay.setHours(23, 59, 59, 999);
             // Get total revenue and transaction count for today
-            const todaySales = await prisma.sale.aggregate({
+            const todaySales = await prisma_1.default.sale.aggregate({
                 where: {
                     created_at: {
                         gte: startOfDay,
@@ -31,7 +33,7 @@ class AnalyticsService {
                 },
             });
             // Get total stock across all products
-            const stockAggregate = await prisma.product.aggregate({
+            const stockAggregate = await prisma_1.default.product.aggregate({
                 _sum: {
                     stock: true,
                 },
@@ -57,7 +59,7 @@ class AnalyticsService {
     async getBestSellers() {
         try {
             // Group sale items by product and sum quantities
-            const bestSellers = await prisma.saleItem.groupBy({
+            const bestSellers = await prisma_1.default.saleItem.groupBy({
                 by: ['product_id'],
                 _sum: {
                     quantity: true,
@@ -72,7 +74,7 @@ class AnalyticsService {
             });
             // Fetch product details for each best seller
             const bestSellersWithDetails = await Promise.all(bestSellers.map(async (item) => {
-                const product = await prisma.product.findUnique({
+                const product = await prisma_1.default.product.findUnique({
                     where: { id: item.product_id },
                     select: {
                         id: true,
@@ -84,7 +86,7 @@ class AnalyticsService {
                     return null;
                 }
                 // Calculate total revenue for this product
-                const revenueData = await prisma.saleItem.aggregate({
+                const revenueData = await prisma_1.default.saleItem.aggregate({
                     where: {
                         product_id: item.product_id,
                     },
@@ -118,7 +120,7 @@ class AnalyticsService {
     async getLowStockProducts() {
         try {
             const threshold = 10;
-            const lowStockProducts = await prisma.product.findMany({
+            const lowStockProducts = await prisma_1.default.product.findMany({
                 where: {
                     stock: {
                         lt: threshold,
@@ -161,7 +163,7 @@ class AnalyticsService {
             const sevenDaysAgo = new Date();
             sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
             // Get sale items from last 7 days, grouped by product
-            const recentSales = await prisma.saleItem.groupBy({
+            const recentSales = await prisma_1.default.saleItem.groupBy({
                 by: ['product_id'],
                 where: {
                     sale: {
@@ -184,7 +186,7 @@ class AnalyticsService {
             });
             // Get product details for items that meet criteria
             const recommendations = await Promise.all(recentSales.map(async (item) => {
-                const product = await prisma.product.findUnique({
+                const product = await prisma_1.default.product.findUnique({
                     where: { id: item.product_id },
                     select: {
                         id: true,

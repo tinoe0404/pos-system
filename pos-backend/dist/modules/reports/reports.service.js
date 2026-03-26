@@ -4,9 +4,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.reportsService = exports.ReportsService = void 0;
-const client_1 = require("@prisma/client");
-const pdfkit_1 = __importDefault(require("pdfkit"));
-const prisma = new client_1.PrismaClient();
+const prisma_1 = __importDefault(require("../../shared/prisma"));
+// @ts-ignore
+const pdfkit_table_1 = __importDefault(require("pdfkit-table"));
 class ReportsService {
     /**
      * Get daily report data (for PDF generation)
@@ -21,7 +21,7 @@ class ReportsService {
             const endOfDay = new Date(targetDate);
             endOfDay.setHours(23, 59, 59, 999);
             // Fetch all sales for the day
-            const sales = await prisma.sale.findMany({
+            const sales = await prisma_1.default.sale.findMany({
                 where: {
                     created_at: {
                         gte: startOfDay,
@@ -90,7 +90,7 @@ class ReportsService {
             const endOfDay = new Date(targetDate);
             endOfDay.setHours(23, 59, 59, 999);
             // Get all sales for the day
-            const sales = await prisma.sale.findMany({
+            const sales = await prisma_1.default.sale.findMany({
                 where: {
                     created_at: {
                         gte: startOfDay,
@@ -186,7 +186,7 @@ class ReportsService {
             startDate.setDate(startDate.getDate() - 6); // Last 7 days including today
             startDate.setHours(0, 0, 0, 0);
             // Get all sales for the week
-            const sales = await prisma.sale.findMany({
+            const sales = await prisma_1.default.sale.findMany({
                 where: {
                     created_at: {
                         gte: startDate,
@@ -286,7 +286,7 @@ class ReportsService {
             startDate.setDate(startDate.getDate() - 29); // Last 30 days including today
             startDate.setHours(0, 0, 0, 0);
             // Get all sales for the month
-            const sales = await prisma.sale.findMany({
+            const sales = await prisma_1.default.sale.findMany({
                 where: {
                     created_at: {
                         gte: startDate,
@@ -417,95 +417,187 @@ class ReportsService {
         }
     }
     /**
-     * Generate PDF report and return as stream
+     * Generate daily PDF report and return as stream
      */
     async generateDailyPDF(dateString) {
         try {
-            // Get report data
             const reportData = await this.getDailyReportData(dateString);
-            // Create PDF document
-            const doc = new pdfkit_1.default({
-                size: 'A4',
-                margin: 50,
-            });
-            // Header
-            doc
-                .fontSize(20)
-                .font('Helvetica-Bold')
-                .text('Daily Sales Report', { align: 'center' })
-                .moveDown(0.5);
-            doc
-                .fontSize(12)
-                .font('Helvetica')
-                .text(`Date: ${reportData.date}`, { align: 'center' })
-                .moveDown(1);
-            // Summary section
-            doc
-                .fontSize(14)
-                .font('Helvetica-Bold')
-                .text('Summary', { underline: true })
-                .moveDown(0.5);
-            doc
-                .fontSize(11)
-                .font('Helvetica')
-                .text(`Total Revenue: $${reportData.totalRevenue}`)
-                .text(`Total Transactions: ${reportData.totalTransactions}`)
-                .text(`Completed: ${reportData.sales.filter((s) => s.status === 'COMPLETED').length}`)
-                .text(`Pending: ${reportData.sales.filter((s) => s.status === 'PENDING').length}`)
-                .text(`Failed: ${reportData.sales.filter((s) => s.status === 'FAILED').length}`)
-                .moveDown(1);
-            // Transactions section
-            doc
-                .fontSize(14)
-                .font('Helvetica-Bold')
-                .text('Transactions', { underline: true })
-                .moveDown(0.5);
-            if (reportData.sales.length === 0) {
-                doc
-                    .fontSize(11)
-                    .font('Helvetica-Oblique')
-                    .text('No transactions for this day.')
-                    .moveDown();
+            const jsonReport = await this.getDailyJsonReport(dateString);
+            // @ts-ignore
+            const doc = new pdfkit_table_1.default({ margin: 50, size: 'A4' });
+            doc.fontSize(20).font('Helvetica-Bold').text('Daily Sales Report', { align: 'center' }).moveDown();
+            doc.fontSize(12).font('Helvetica').text(`Date: ${reportData.date}`, { align: 'center' }).moveDown(2);
+            // Summary Table
+            const summaryTable = {
+                title: "Summary",
+                headers: ["Metric", "Value"],
+                rows: [
+                    ["Total Revenue", `$${jsonReport.totalRevenue}`],
+                    ["Total Transactions", jsonReport.totalTransactions.toString()],
+                    ["Completed Transactions", jsonReport.completedTransactions.toString()],
+                    ["Avg. Transaction Value", `$${jsonReport.averageTransactionValue}`]
+                ]
+            };
+            await doc.table(summaryTable, { width: 500 });
+            doc.moveDown(1);
+            // Payment Breakdown
+            const paymentTable = {
+                title: "Payment Method Breakdown",
+                headers: ["Method", "Revenue"],
+                rows: [
+                    ["Cash", `$${jsonReport.paymentMethodBreakdown.cash}`],
+                    ["EcoCash", `$${jsonReport.paymentMethodBreakdown.ecocash}`]
+                ]
+            };
+            await doc.table(paymentTable, { width: 500 });
+            doc.moveDown(1);
+            // Top Products
+            if (jsonReport.topProducts.length > 0) {
+                const topProductsTable = {
+                    title: "Top Products",
+                    headers: ["Product", "Quantity Sold", "Revenue"],
+                    rows: jsonReport.topProducts.map(p => [p.productName, p.quantity.toString(), `$${p.revenue}`])
+                };
+                await doc.table(topProductsTable, { width: 500 });
+                doc.moveDown(1);
+            }
+            // Transactions
+            const txRows = reportData.sales.map(s => [
+                s.id.substring(0, 8),
+                s.user_username,
+                new Date(s.created_at).toLocaleTimeString(),
+                s.status,
+                `$${s.total}`
+            ]);
+            const txTable = {
+                title: "Transactions List",
+                headers: ["ID", "Cashier", "Time", "Status", "Total"],
+                rows: txRows
+            };
+            if (txRows.length > 0) {
+                await doc.table(txTable, { width: 500 });
             }
             else {
-                reportData.sales.forEach((sale, index) => {
-                    // Add new page if needed
-                    if (doc.y > 700) {
-                        doc.addPage();
-                    }
-                    doc
-                        .fontSize(11)
-                        .font('Helvetica-Bold')
-                        .text(`Transaction #${index + 1} - ${sale.id.substring(0, 8)}...`, { continued: false });
-                    doc
-                        .fontSize(10)
-                        .font('Helvetica')
-                        .text(`Cashier: ${sale.user_username}`)
-                        .text(`Status: ${sale.status}`)
-                        .text(`Time: ${new Date(sale.created_at).toLocaleTimeString()}`)
-                        .text(`Total: $${sale.total}`)
-                        .moveDown(0.3);
-                    // Items
-                    doc.fontSize(9).font('Helvetica').text('Items:', { indent: 20 });
-                    sale.items.forEach((item) => {
-                        doc
-                            .fontSize(9)
-                            .text(`  • ${item.product_name} x${item.quantity} @ $${item.price_at_sale} = $${item.subtotal}`, { indent: 30 });
-                    });
-                    doc.moveDown(0.8);
-                });
+                doc.fontSize(11).font('Helvetica-Oblique').text('No transactions for this day.').moveDown();
             }
-            // Footer
-            doc
-                .fontSize(8)
-                .font('Helvetica-Oblique')
-                .text(`Generated on ${new Date().toLocaleString()}`, 50, doc.page.height - 50, { align: 'center' });
-            // Finalize PDF
+            doc.fontSize(8).font('Helvetica-Oblique').text(`Generated on ${new Date().toLocaleString()}`, 50, doc.page.height - 50, { align: 'center' });
             doc.end();
             return doc;
         }
         catch (error) {
             console.error('Error generating PDF:', error);
+            throw error;
+        }
+    }
+    /**
+     * Generate weekly PDF report and return as stream
+     */
+    async generateWeeklyPDF() {
+        try {
+            const jsonReport = await this.getWeeklyJsonReport();
+            // @ts-ignore
+            const doc = new pdfkit_table_1.default({ margin: 50, size: 'A4' });
+            doc.fontSize(20).font('Helvetica-Bold').text('Weekly Sales Report', { align: 'center' }).moveDown();
+            doc.fontSize(12).font('Helvetica').text(`Period: ${jsonReport.startDate} to ${jsonReport.endDate}`, { align: 'center' }).moveDown(2);
+            // Summary Table
+            const summaryTable = {
+                title: "Weekly Summary",
+                headers: ["Metric", "Value"],
+                rows: [
+                    ["Total Revenue", `$${jsonReport.totalRevenue}`],
+                    ["Total Transactions", jsonReport.totalTransactions.toString()],
+                    ["Average Daily Revenue", `$${jsonReport.averageDailyRevenue}`]
+                ]
+            };
+            await doc.table(summaryTable, { width: 500 });
+            doc.moveDown(1);
+            // Daily Breakdown
+            if (jsonReport.dailyBreakdown.length > 0) {
+                const dailyTable = {
+                    title: "Daily Layout",
+                    headers: ["Date", "Transactions", "Revenue"],
+                    rows: jsonReport.dailyBreakdown.map(d => [d.date, d.transactions.toString(), `$${d.revenue}`])
+                };
+                await doc.table(dailyTable, { width: 500 });
+                doc.moveDown(1);
+            }
+            // Top Products
+            if (jsonReport.topProducts.length > 0) {
+                const topProductsTable = {
+                    title: "Top Products",
+                    headers: ["Product", "Quantity Sold", "Revenue"],
+                    rows: jsonReport.topProducts.map(p => [p.productName, p.quantity.toString(), `$${p.revenue}`])
+                };
+                await doc.table(topProductsTable, { width: 500 });
+                doc.moveDown(1);
+            }
+            doc.fontSize(8).font('Helvetica-Oblique').text(`Generated on ${new Date().toLocaleString()}`, 50, doc.page.height - 50, { align: 'center' });
+            doc.end();
+            return doc;
+        }
+        catch (error) {
+            console.error('Error generating Weekly PDF:', error);
+            throw error;
+        }
+    }
+    /**
+     * Generate monthly PDF report and return as stream
+     */
+    async generateMonthlyPDF() {
+        try {
+            const jsonReport = await this.getMonthlyJsonReport();
+            // @ts-ignore
+            const doc = new pdfkit_table_1.default({ margin: 50, size: 'A4' });
+            doc.fontSize(20).font('Helvetica-Bold').text('Monthly Sales Report', { align: 'center' }).moveDown();
+            doc.fontSize(12).font('Helvetica').text(`Period: ${jsonReport.startDate} to ${jsonReport.endDate}`, { align: 'center' }).moveDown(2);
+            // Summary
+            const summaryTable = {
+                title: "Monthly Summary",
+                headers: ["Metric", "Value"],
+                rows: [
+                    ["Total Revenue", `$${jsonReport.totalRevenue}`],
+                    ["Total Transactions", jsonReport.totalTransactions.toString()],
+                    ["Average Daily Revenue", `$${jsonReport.averageDailyRevenue}`]
+                ]
+            };
+            await doc.table(summaryTable, { width: 500 });
+            doc.moveDown(1);
+            // Weekly Breakdown
+            if (jsonReport.weeklyBreakdown.length > 0) {
+                const weeklyTable = {
+                    title: "Weekly Layout",
+                    headers: ["Week", "Transactions", "Revenue"],
+                    rows: jsonReport.weeklyBreakdown.map(w => [`${w.weekStart} to ${w.weekEnd}`, w.transactions.toString(), `$${w.revenue}`])
+                };
+                await doc.table(weeklyTable, { width: 500 });
+                doc.moveDown(1);
+            }
+            // Top Products
+            if (jsonReport.topProducts.length > 0) {
+                const topProductsTable = {
+                    title: "Top Products",
+                    headers: ["Product", "Quantity Sold", "Revenue"],
+                    rows: jsonReport.topProducts.map(p => [p.productName, p.quantity.toString(), `$${p.revenue}`])
+                };
+                await doc.table(topProductsTable, { width: 500 });
+                doc.moveDown(1);
+            }
+            // Categories
+            if (jsonReport.categoryBreakdown.length > 0) {
+                const catTable = {
+                    title: "Category Breakdown",
+                    headers: ["Category", "Transactions", "Revenue"],
+                    rows: jsonReport.categoryBreakdown.map(c => [c.category, c.transactions.toString(), `$${c.revenue}`])
+                };
+                await doc.table(catTable, { width: 500 });
+                doc.moveDown(1);
+            }
+            doc.fontSize(8).font('Helvetica-Oblique').text(`Generated on ${new Date().toLocaleString()}`, 50, doc.page.height - 50, { align: 'center' });
+            doc.end();
+            return doc;
+        }
+        catch (error) {
+            console.error('Error generating Monthly PDF:', error);
             throw error;
         }
     }

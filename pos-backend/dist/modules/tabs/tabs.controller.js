@@ -8,8 +8,9 @@ exports.closeTabHandler = closeTabHandler;
 const tabs_service_1 = require("./tabs.service");
 async function createTabHandler(request, reply) {
     try {
-        const userId = request.user.id;
-        const tab = await tabs_service_1.tabsService.createTab(userId, request.body);
+        const user = request.user;
+        const body = request.body;
+        const tab = await tabs_service_1.tabsService.createTab(user.id, body);
         return reply.code(201).send(tab);
     }
     catch (error) {
@@ -28,7 +29,8 @@ async function getTabsHandler(request, reply) {
 }
 async function getTabByIdHandler(request, reply) {
     try {
-        const tab = await tabs_service_1.tabsService.getTabById(request.params.id);
+        const { id } = request.params;
+        const tab = await tabs_service_1.tabsService.getTabById(id);
         return reply.send(tab);
     }
     catch (error) {
@@ -37,7 +39,9 @@ async function getTabByIdHandler(request, reply) {
 }
 async function depositToTabHandler(request, reply) {
     try {
-        const tab = await tabs_service_1.tabsService.depositToTab(request.params.id, request.body.amount, request.body.note);
+        const { id } = request.params;
+        const body = request.body;
+        const tab = await tabs_service_1.tabsService.depositToTab(id, body.amount, body.note);
         return reply.send(tab);
     }
     catch (error) {
@@ -46,7 +50,9 @@ async function depositToTabHandler(request, reply) {
 }
 async function closeTabHandler(request, reply) {
     try {
-        const result = await tabs_service_1.tabsService.closeTab(request.params.id, request.body.note);
+        const { id } = request.params;
+        const body = request.body;
+        const result = await tabs_service_1.tabsService.closeTab(id, body.note);
         return reply.send(result);
     }
     catch (error) {

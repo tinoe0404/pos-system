@@ -48,5 +48,21 @@ async function reportsRoutes(app) {
             tags: ['reports'],
         },
     }, reports_controller_1.getMonthlyJsonReportHandler);
+    // GET /api/reports/weekly/pdf - Generate weekly sales PDF (Admin only)
+    server.get('/weekly/pdf', {
+        onRequest: [auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)('admin')],
+        schema: {
+            description: 'Generate and download weekly sales report as PDF',
+            tags: ['reports'],
+        },
+    }, reports_controller_1.generateWeeklyPDFHandler);
+    // GET /api/reports/monthly/pdf - Generate monthly sales PDF (Admin only)
+    server.get('/monthly/pdf', {
+        onRequest: [auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)('admin')],
+        schema: {
+            description: 'Generate and download monthly sales report as PDF',
+            tags: ['reports'],
+        },
+    }, reports_controller_1.generateMonthlyPDFHandler);
 }
 exports.default = reportsRoutes;

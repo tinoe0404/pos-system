@@ -6,14 +6,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.loginHandler = loginHandler;
 exports.meHandler = meHandler;
 exports.logoutHandler = logoutHandler;
-const client_1 = require("@prisma/client");
+const prisma_1 = __importDefault(require("../../shared/prisma"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
-const prisma = new client_1.PrismaClient();
 async function loginHandler(request, reply) {
     const { username, password } = request.body;
     try {
         // Find user
-        const user = await prisma.user.findUnique({
+        const user = await prisma_1.default.user.findUnique({
             where: { username },
         });
         if (!user) {
@@ -62,7 +61,7 @@ async function meHandler(request, reply) {
     try {
         const user = request.user;
         // Fetch fresh user data
-        const userData = await prisma.user.findUnique({
+        const userData = await prisma_1.default.user.findUnique({
             where: { id: user.id },
             select: {
                 id: true,

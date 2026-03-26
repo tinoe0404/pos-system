@@ -1,14 +1,17 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.tabsService = void 0;
 const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = __importDefault(require("../../shared/prisma"));
 exports.tabsService = {
     /**
      * Create a new tab with an initial deposit.
      */
     async createTab(userId, data) {
-        const tab = await prisma.$transaction(async (tx) => {
+        const tab = await prisma_1.default.$transaction(async (tx) => {
             const newTab = await tx.tab.create({
                 data: {
                     customer_name: data.customer_name,
@@ -29,7 +32,7 @@ exports.tabsService = {
             });
             return newTab;
         });
-        return formatTab(await prisma.tab.findUnique({
+        return formatTab(await prisma_1.default.tab.findUnique({
             where: { id: tab.id },
             include: { transactions: { orderBy: { created_at: 'desc' } }, created_by: { select: { id: true, username: true } } },
         }));
@@ -48,7 +51,7 @@ exports.tabsService = {
                 mode: 'insensitive',
             };
         }
-        const tabs = await prisma.tab.findMany({
+        const tabs = await prisma_1.default.tab.findMany({
             where,
             include: {
                 created_by: { select: { id: true, username: true } },
@@ -65,7 +68,7 @@ exports.tabsService = {
      * Get a single tab by ID with full transaction history.
      */
     async getTabById(tabId) {
-        const tab = await prisma.tab.findUnique({
+        const tab = await prisma_1.default.tab.findUnique({
             where: { id: tabId },
             include: {
                 transactions: {
@@ -91,12 +94,12 @@ exports.tabsService = {
      * Add more money to an existing tab.
      */
     async depositToTab(tabId, amount, note) {
-        const tab = await prisma.tab.findUnique({ where: { id: tabId } });
+        const tab = await prisma_1.default.tab.findUnique({ where: { id: tabId } });
         if (!tab)
             throw new Error('Tab not found');
         if (tab.status !== 'ACTIVE')
             throw new Error('Tab is not active');
-        const updated = await prisma.$transaction(async (tx) => {
+        const updated = await prisma_1.default.$transaction(async (tx) => {
             await tx.tabTransaction.create({
                 data: {
                     tab_id: tabId,
@@ -113,7 +116,7 @@ exports.tabsService = {
                 },
             });
         });
-        return formatTab(await prisma.tab.findUnique({
+        return formatTab(await prisma_1.default.tab.findUnique({
             where: { id: updated.id },
             include: { transactions: { orderBy: { created_at: 'desc' } }, created_by: { select: { id: true, username: true } } },
         }));
@@ -122,13 +125,13 @@ exports.tabsService = {
      * Close a tab and return remaining balance to customer.
      */
     async closeTab(tabId, note) {
-        const tab = await prisma.tab.findUnique({ where: { id: tabId } });
+        const tab = await prisma_1.default.tab.findUnique({ where: { id: tabId } });
         if (!tab)
             throw new Error('Tab not found');
         if (tab.status === 'CLOSED')
             throw new Error('Tab is already closed');
         const remainingBalance = Number(tab.balance);
-        const updated = await prisma.$transaction(async (tx) => {
+        const updated = await prisma_1.default.$transaction(async (tx) => {
             if (remainingBalance > 0) {
                 await tx.tabTransaction.create({
                     data: {
@@ -149,7 +152,7 @@ exports.tabsService = {
             });
         });
         return {
-            ...formatTab(await prisma.tab.findUnique({
+            ...formatTab(await prisma_1.default.tab.findUnique({
                 where: { id: updated.id },
                 include: { transactions: { orderBy: { created_at: 'desc' } }, created_by: { select: { id: true, username: true } } },
             })),
@@ -161,7 +164,7 @@ exports.tabsService = {
      * Returns the updated tab balance.
      */
     async chargeToTab(tabId, saleId, amount) {
-        const tab = await prisma.tab.findUnique({ where: { id: tabId } });
+        const tab = await prisma_1.default.tab.findUnique({ where: { id: tabId } });
         if (!tab)
             throw new Error('Tab not found');
         if (tab.status !== 'ACTIVE')
@@ -170,7 +173,7 @@ exports.tabsService = {
             throw new Error(`Insufficient tab balance. Available: $${Number(tab.balance).toFixed(2)}, Required: $${amount.toFixed(2)}`);
         }
         const newBalance = Number(tab.balance) - amount;
-        const updated = await prisma.$transaction(async (tx) => {
+        const updated = await prisma_1.default.$transaction(async (tx) => {
             await tx.tabTransaction.create({
                 data: {
                     tab_id: tabId,
@@ -194,10 +197,10 @@ exports.tabsService = {
      * Refund a sale amount back to a tab (called when voiding a tab-linked sale).
      */
     async refundToTab(tabId, saleId, amount) {
-        const tab = await prisma.tab.findUnique({ where: { id: tabId } });
+        const tab = await prisma_1.default.tab.findUnique({ where: { id: tabId } });
         if (!tab)
             throw new Error('Tab not found');
-        await prisma.$transaction(async (tx) => {
+        await prisma_1.default.$transaction(async (tx) => {
             await tx.tabTransaction.create({
                 data: {
                     tab_id: tabId,

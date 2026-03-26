@@ -78,3 +78,44 @@ export const downloadDailyReportPDF = async (date?: string) => {
         throw error;
     }
 };
+
+export const downloadWeeklyReportPDF = async () => {
+    try {
+        const res = await api.get(`/api/reports/weekly/pdf`, {
+            responseType: 'blob',
+        });
+
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'weekly-report.pdf');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Failed to download Weekly PDF:', error);
+        throw error;
+    }
+};
+
+export const downloadMonthlyReportPDF = async () => {
+    try {
+        const res = await api.get(`/api/reports/monthly/pdf`, {
+            responseType: 'blob',
+        });
+
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'monthly-report.pdf');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Failed to download Monthly PDF:', error);
+        throw error;
+    }
+};
+

@@ -8,10 +8,14 @@ const fastify_1 = __importDefault(require("fastify"));
 const cors_1 = __importDefault(require("@fastify/cors"));
 const helmet_1 = __importDefault(require("@fastify/helmet"));
 const jwt_1 = __importDefault(require("@fastify/jwt"));
+const compress_1 = __importDefault(require("@fastify/compress"));
+const rate_limit_1 = __importDefault(require("@fastify/rate-limit"));
 const swagger_1 = __importDefault(require("@fastify/swagger"));
 const swagger_ui_1 = __importDefault(require("@fastify/swagger-ui"));
 const fastify_type_provider_zod_1 = require("fastify-type-provider-zod");
 const fastify_type_provider_zod_2 = require("fastify-type-provider-zod");
+const errors_1 = require("./shared/errors");
+const client_1 = require("@prisma/client");
 // Import all route modules
 const auth_routes_1 = __importDefault(require("./modules/auth/auth.routes"));
 const product_routes_1 = __importDefault(require("./modules/products/product.routes"));
@@ -23,10 +27,14 @@ const reports_routes_1 = __importDefault(require("./modules/reports/reports.rout
 const register_routes_1 = __importDefault(require("./modules/register/register.routes"));
 const refund_routes_1 = require("./modules/refunds/refund.routes");
 const stocksheet_routes_1 = __importDefault(require("./modules/stocksheet/stocksheet.routes"));
+const tabs_routes_1 = __importDefault(require("./modules/tabs/tabs.routes"));
+const keg_routes_1 = __importDefault(require("./modules/kegs/keg.routes"));
+const prisma_1 = __importDefault(require("./shared/prisma"));
+const redis_1 = __importDefault(require("./shared/redis"));
 async function buildApp() {
     const app = (0, fastify_1.default)({
         logger: {
-            level: process.env.NODE_ENV === 'production' ? 'error' : 'info',
+            level: 'info', // Changed to 'info' for production visibility
         },
         ajv: {
             customOptions: {
@@ -65,10 +73,20 @@ async function buildApp() {
         contentSecurityPolicy: false, // Disable CSP for API
         crossOriginEmbedderPolicy: false,
     });
-    // Register JWT
+    // Register Response Compression (60-80% smaller JSON payloads)
+    await app.register(compress_1.default, { global: true });
+    // Register Rate Limiting
+    await app.register(rate_limit_1.default, {
+        max: 100,
+        timeWindow: '1 minute',
+    });
+    const jwtSecret = process.env.JWT_SECRET;
+    if (process.env.NODE_ENV === 'production' && !jwtSecret) {
+        throw new Error('FATAL: JWT_SECRET environment variable is missing. It is strictly required in production.');
+    }
     // Register JWT
     await app.register(jwt_1.default, {
-        secret: process.env.JWT_SECRET || 'fallback-secret-change-this',
+        secret: jwtSecret || 'fallback-secret-change-this',
         sign: {
             expiresIn: '24h',
         },
@@ -102,10 +120,14 @@ async function buildApp() {
     await app.register(swagger_ui_1.default, {
         routePrefix: '/documentation',
     });
-    // Health check endpoint
+    // Health check endpoint with DB + Redis status
     app.get('/health', async () => {
+        const dbHealthy = await prisma_1.default.$queryRawUnsafe('SELECT 1').then(() => true).catch(() => false);
+        const redisHealthy = await redis_1.default.ping().then(() => true).catch(() => false);
         return {
-            status: 'ok',
+            status: dbHealthy && redisHealthy ? 'ok' : 'degraded',
+            db: dbHealthy,
+            redis: redisHealthy,
             timestamp: new Date().toISOString(),
             uptime: process.uptime(),
         };
@@ -126,6 +148,8 @@ async function buildApp() {
                 notifications: '/api/notifications',
                 recommendations: '/api/recommendations',
                 reports: '/api/reports',
+                kegs: '/api/kegs',
+                taps: '/api/taps',
             },
         };
     });
@@ -142,6 +166,59 @@ async function buildApp() {
     await app.register(register_routes_1.default, { prefix: '/api/register' });
     await app.register(refund_routes_1.refundRoutes, { prefix: '/api' });
     await app.register(stocksheet_routes_1.default, { prefix: '/api/reports/stock-sheet' });
-    await app.register(tabRoutes, { prefix: '/api/tabs' });
+    await app.register(tabs_routes_1.default, { prefix: '/api/tabs' });
+    await app.register(keg_routes_1.default, { prefix: '/api' });
+    // Global Error Handler
+    app.setErrorHandler((error, request, reply) => {
+        // Log the error locally if not in tests
+        if (process.env.NODE_ENV !== 'test') {
+            request.log.error(error);
+        }
+        // 1. Uncaught custom API errors
+        if (error instanceof errors_1.ApiError) {
+            return reply.status(error.statusCode).send({
+                error: error.name.replace('Error', ''),
+                message: error.message,
+            });
+        }
+        // 2. Zod Validation errors
+        if (error.validation) {
+            return reply.status(400).send({
+                error: 'Validation Error',
+                message: 'Invalid request data provided',
+                details: error.validation,
+            });
+        }
+        // 3. Prisma Database known errors
+        if (error instanceof client_1.Prisma.PrismaClientKnownRequestError) {
+            if (error.code === 'P2002') {
+                const target = error.meta?.target?.join(', ') || 'field';
+                return reply.status(409).send({
+                    error: 'Conflict',
+                    message: `A record with this ${target} already exists.`,
+                });
+            }
+            if (error.code === 'P2025') {
+                return reply.status(404).send({
+                    error: 'Not Found',
+                    message: 'The requested record could not be found.',
+                });
+            }
+        }
+        // 4. JWT errors
+        if (error.code === 'FST_JWT_NO_AUTHORIZATION_IN_HEADER' || error.code === 'FST_JWT_AUTHORIZATION_TOKEN_EXPIRED') {
+            return reply.status(401).send({
+                error: 'Unauthorized',
+                message: 'Invalid or expired authentication token',
+            });
+        }
+        // 5. Generic Fallback
+        const statusCode = error.statusCode || 500;
+        const isProd = process.env.NODE_ENV === 'production';
+        return reply.status(statusCode).send({
+            error: statusCode === 500 ? 'Internal Server Error' : error.name,
+            message: statusCode === 500 && isProd ? 'An unexpected error occurred' : error.message,
+        });
+    });
     return app;
 }

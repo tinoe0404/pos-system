@@ -5,14 +5,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 require("dotenv/config");
 const app_1 = require("./app");
-const client_1 = require("@prisma/client");
+const prisma_1 = __importDefault(require("./shared/prisma"));
 const redis_1 = __importDefault(require("./shared/redis"));
 const queue_1 = require("./shared/queue");
-const prisma = new client_1.PrismaClient();
+const sales_cleanup_1 = require("./modules/sales/sales.cleanup");
 async function start() {
     try {
         // Test database connection
-        await prisma.$connect();
+        await prisma_1.default.$connect();
         console.log('✅ Database connected');
         // Test Redis connection
         await redis_1.default.ping();
@@ -22,6 +22,8 @@ async function start() {
         await app.listen({ port, host });
         console.log(`🚀 Server running at http://${host}:${port}`);
         console.log('🔄 Sales worker is processing jobs in the background');
+        // Start background jobs
+        (0, sales_cleanup_1.startTransactionCleanupJob)();
     }
     catch (err) {
         console.error('❌ Server startup error:', err);
@@ -36,7 +38,7 @@ async function shutdown() {
         await queue_1.salesWorker.close();
         console.log('✅ Worker closed');
         // Close database
-        await prisma.$disconnect();
+        await prisma_1.default.$disconnect();
         console.log('✅ Database disconnected');
         // Close Redis
         await redis_1.default.quit();

@@ -4,9 +4,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.stockSheetService = exports.StockSheetService = void 0;
-const client_1 = require("@prisma/client");
+const prisma_1 = __importDefault(require("../../shared/prisma"));
 const pdfkit_1 = __importDefault(require("pdfkit"));
-const prisma = new client_1.PrismaClient();
 // Category display order matching the TCP Investments stock sheet
 const CATEGORY_ORDER = [
     'Clear Beers Quarts',
@@ -16,9 +15,8 @@ const CATEGORY_ORDER = [
     'Soft Drinks',
     'Whiskey',
     'Ma Eats',
+    'Cigarettes',
 ];
-// Cigarettes is rendered as a separate section at the bottom
-const CIGARETTES_CATEGORY = 'Cigarettes';
 class StockSheetService {
     /**
      * Gather all data needed for the stock sheet on a given date
@@ -30,12 +28,12 @@ class StockSheetService {
         const endOfDay = new Date(targetDate);
         endOfDay.setHours(23, 59, 59, 999);
         // 1. Get all active products
-        const products = await prisma.product.findMany({
+        const products = await prisma_1.default.product.findMany({
             where: { is_active: true },
             orderBy: [{ category: 'asc' }, { name: 'asc' }],
         });
         // 2. Get all completed sale items for the day
-        const saleItems = await prisma.saleItem.findMany({
+        const saleItems = await prisma_1.default.saleItem.findMany({
             where: {
                 sale: {
                     status: 'COMPLETED',
@@ -56,6 +54,26 @@ class StockSheetService {
             const current = soldMap.get(item.product_id) || 0;
             soldMap.set(item.product_id, current + item.quantity);
         });
+        // 3b. Get all restock movements for the day
+        const restockMovements = await prisma_1.default.stockMovement.findMany({
+            where: {
+                type: 'RESTOCK',
+                created_at: {
+                    gte: startOfDay,
+                    lte: endOfDay,
+                },
+            },
+            select: {
+                product_id: true,
+                quantity_change: true,
+            },
+        });
+        // 3c. Aggregate restock quantities per product
+        const restockMap = new Map();
+        restockMovements.forEach((movement) => {
+            const current = restockMap.get(movement.product_id) || 0;
+            restockMap.set(movement.product_id, current + movement.quantity_change);
+        });
         // 4. Build rows per product
         const categoryMap = new Map();
         products.forEach((product) => {
@@ -63,9 +81,9 @@ class StockSheetService {
             const stockSold = soldMap.get(product.id) || 0;
             const closingStock = product.stock;
             const unitPrice = Number(product.price);
-            // Opening stock = closing + sold (approximation without add-new tracking)
-            const openingStock = closingStock + stockSold;
-            const addNewStock = 0; // No restock tracking model yet
+            // Opening stock = closing + sold - restocked
+            const addNewStock = restockMap.get(product.id) || 0;
+            const openingStock = closingStock + stockSold - addNewStock;
             const totalStock = openingStock + addNewStock;
             const amountSold = stockSold * unitPrice;
             const shortFalls = totalStock - stockSold - closingStock;
@@ -87,7 +105,6 @@ class StockSheetService {
         });
         // 5. Sort categories according to CATEGORY_ORDER
         const mainSections = [];
-        let cigarettesSection = null;
         // First, add categories in the defined order
         for (const cat of CATEGORY_ORDER) {
             const rows = categoryMap.get(cat);
@@ -96,12 +113,6 @@ class StockSheetService {
                 categoryMap.delete(cat);
             }
         }
-        // Pull out cigarettes
-        const cigRows = categoryMap.get(CIGARETTES_CATEGORY);
-        if (cigRows && cigRows.length > 0) {
-            cigarettesSection = { category: CIGARETTES_CATEGORY, rows: cigRows };
-            categoryMap.delete(CIGARETTES_CATEGORY);
-        }
         // Add any remaining categories not in CATEGORY_ORDER
         for (const [cat, rows] of categoryMap.entries()) {
             if (rows.length > 0) {
@@ -109,16 +120,37 @@ class StockSheetService {
             }
         }
         // 6. Compute totals for the footer
-        const allRows = [
-            ...mainSections.flatMap((s) => s.rows),
-            ...(cigarettesSection?.rows || []),
-        ];
+        const allRows = mainSections.flatMap((s) => s.rows);
         const totalAmountSold = allRows.reduce((sum, r) => sum + r.amountSold, 0);
+        // 7. Compute payment method breakdown from completed sales
+        const completedSales = await prisma_1.default.sale.findMany({
+            where: {
+                status: 'COMPLETED',
+                created_at: {
+                    gte: startOfDay,
+                    lte: endOfDay,
+                },
+            },
+            select: {
+                payment_method: true,
+                total: true,
+            },
+        });
+        const paymentBreakdown = { cash: 0, ecocash: 0 };
+        completedSales.forEach((sale) => {
+            const amount = Number(sale.total);
+            if (sale.payment_method === 'CASH') {
+                paymentBreakdown.cash += amount;
+            }
+            else if (sale.payment_method === 'ECOCASH') {
+                paymentBreakdown.ecocash += amount;
+            }
+        });
         return {
             date: startOfDay,
             mainSections,
-            cigarettesSection,
             totalAmountSold,
+            paymentBreakdown,
         };
     }
     /**
@@ -151,14 +183,9 @@ class StockSheetService {
             .moveDown(0.8);
         // ==================== MAIN TABLE ====================
         this.drawMainTable(doc, data.mainSections, pageWidth);
-        // ==================== CIGARETTES SECTION ====================
-        if (data.cigarettesSection) {
-            doc.moveDown(1.5);
-            this.drawCigarettesSection(doc, data.cigarettesSection, pageWidth);
-        }
         // ==================== FOOTER ====================
         doc.moveDown(1);
-        this.drawFooter(doc, data.totalAmountSold, pageWidth);
+        this.drawFooter(doc, data.totalAmountSold, data.paymentBreakdown, pageWidth);
         doc.end();
         return doc;
     }
@@ -266,40 +293,7 @@ class StockSheetService {
         }
         doc.y = y;
     }
-    drawCigarettesSection(doc, section, pageWidth) {
-        let y = doc.y;
-        const startX = 30;
-        const colWidth = pageWidth * 0.25;
-        const rowHeight = 18;
-        // Check for page break
-        if (y + rowHeight * (section.rows.length + 2) > doc.page.height - 120) {
-            doc.addPage();
-            y = 30;
-        }
-        // Section header
-        doc
-            .fontSize(10)
-            .font('Helvetica-Bold')
-            .fillColor('#000000')
-            .text('Cigarettes', startX, y)
-            .moveDown(0.3);
-        y = doc.y;
-        // Simple table: just product names with empty cells for manual fill
-        doc.fontSize(7).font('Helvetica');
-        for (const row of section.rows) {
-            if (y + rowHeight > doc.page.height - 120) {
-                doc.addPage();
-                y = 30;
-            }
-            doc.rect(startX, y, colWidth, rowHeight).stroke();
-            doc
-                .fillColor('#000000')
-                .text(row.name, startX + 4, y + 5, { width: colWidth - 8 });
-            y += rowHeight;
-        }
-        doc.y = y;
-    }
-    drawFooter(doc, totalAmountSold, pageWidth) {
+    drawFooter(doc, totalAmountSold, paymentBreakdown, pageWidth) {
         let y = doc.y;
         const startX = 30;
         // Check for page break
@@ -314,25 +308,31 @@ class StockSheetService {
         // Total Cash Received / Signatures
         doc.text(`Total Cash Received..................   Cashier's Signature.......................   Manager's Signature.......................`, startX, y);
         y += 25;
-        // Payment method boxes
-        const boxWidth = pageWidth / 5;
-        const boxHeight = 28;
-        const methods = ['USD', 'RTGS', 'ECOCASH', 'SWIPE', 'TOKEN'];
+        // Payment method boxes — dynamic from actual sales data
+        const methods = [
+            { label: 'CASH', amount: paymentBreakdown.cash },
+            { label: 'ECOCASH', amount: paymentBreakdown.ecocash },
+        ];
+        const boxWidth = pageWidth / methods.length;
+        const boxHeight = 34;
         methods.forEach((method, i) => {
             const bx = startX + i * boxWidth;
             doc.rect(bx, y, boxWidth, boxHeight).stroke();
             doc
                 .fontSize(8)
                 .font('Helvetica-Bold')
-                .text(method, bx, y + 4, {
+                .text(method.label, bx, y + 4, {
                 width: boxWidth,
                 align: 'center',
             });
-            // Draw a line inside the box for writing
+            // Show actual revenue amount
             doc
-                .moveTo(bx + 5, y + boxHeight - 8)
-                .lineTo(bx + boxWidth - 5, y + boxHeight - 8)
-                .stroke();
+                .fontSize(9)
+                .font('Helvetica')
+                .text(`$${method.amount.toFixed(2)}`, bx, y + 18, {
+                width: boxWidth,
+                align: 'center',
+            });
         });
         y += boxHeight + 10;
         // Balance note

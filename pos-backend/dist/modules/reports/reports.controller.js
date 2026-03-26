@@ -4,6 +4,8 @@ exports.generateDailyPDFHandler = generateDailyPDFHandler;
 exports.getDailyJsonReportHandler = getDailyJsonReportHandler;
 exports.getWeeklyJsonReportHandler = getWeeklyJsonReportHandler;
 exports.getMonthlyJsonReportHandler = getMonthlyJsonReportHandler;
+exports.generateWeeklyPDFHandler = generateWeeklyPDFHandler;
+exports.generateMonthlyPDFHandler = generateMonthlyPDFHandler;
 const reports_service_1 = require("./reports.service");
 async function generateDailyPDFHandler(request, reply) {
     try {
@@ -108,6 +110,38 @@ async function getMonthlyJsonReportHandler(request, reply) {
         return reply.code(500).send({
             error: 'Internal server error',
             message: 'Failed to fetch monthly report',
+        });
+    }
+}
+async function generateWeeklyPDFHandler(request, reply) {
+    try {
+        const pdfStream = await reports_service_1.reportsService.generateWeeklyPDF();
+        const filename = `weekly-sales-report-${new Date().toISOString().split('T')[0]}.pdf`;
+        reply.header('Content-Type', 'application/pdf');
+        reply.header('Content-Disposition', `attachment; filename="${filename}"`);
+        return reply.send(pdfStream);
+    }
+    catch (error) {
+        request.log.error(error);
+        return reply.code(500).send({
+            error: 'Internal server error',
+            message: 'Failed to generate Weekly PDF report',
+        });
+    }
+}
+async function generateMonthlyPDFHandler(request, reply) {
+    try {
+        const pdfStream = await reports_service_1.reportsService.generateMonthlyPDF();
+        const filename = `monthly-sales-report-${new Date().toISOString().split('T')[0]}.pdf`;
+        reply.header('Content-Type', 'application/pdf');
+        reply.header('Content-Disposition', `attachment; filename="${filename}"`);
+        return reply.send(pdfStream);
+    }
+    catch (error) {
+        request.log.error(error);
+        return reply.code(500).send({
+            error: 'Internal server error',
+            message: 'Failed to generate Monthly PDF report',
         });
     }
 }

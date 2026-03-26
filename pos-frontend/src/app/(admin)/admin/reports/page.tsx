@@ -1,6 +1,6 @@
 'use client';
 
-import { useDailyReport, downloadDailyReportPDF } from '@/hooks/useReports';
+import { useDailyReport, downloadDailyReportPDF, downloadWeeklyReportPDF, downloadMonthlyReportPDF } from '@/hooks/useReports';
 import { useState } from 'react';
 import { Download, Calendar, DollarSign, ShoppingCart, TrendingUp, Loader2, FileText } from 'lucide-react';
 import { toast } from 'sonner';
@@ -42,14 +42,52 @@ export default function ReportsPage() {
                     <h1 className="text-xl font-semibold text-foreground">Daily Reports</h1>
                     <p className="text-sm text-foreground-muted mt-0.5">View and download daily sales reports</p>
                 </div>
-                <button
-                    onClick={handleDownloadPDF}
-                    disabled={isDownloading || isLoading}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-foreground font-semibold rounded-xl hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20 text-sm"
-                >
-                    {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                    <span>Download PDF</span>
-                </button>
+                <div className="flex gap-2 flex-wrap">
+                    <button
+                        onClick={handleDownloadPDF}
+                        disabled={isDownloading || isLoading}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-foreground font-semibold rounded-xl hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20 text-sm"
+                    >
+                        {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                        <span>Daily PDF</span>
+                    </button>
+                    <button
+                        onClick={async () => {
+                            setIsDownloading(true);
+                            try {
+                                await downloadWeeklyReportPDF();
+                                toast.success('Weekly Report downloaded');
+                            } catch {
+                                toast.error('Failed to download Weekly report');
+                            } finally {
+                                setIsDownloading(false);
+                            }
+                        }}
+                        disabled={isDownloading}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-background-secondary border border-card-border text-foreground font-semibold rounded-xl hover:bg-background-tertiary transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    >
+                        {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                        <span>Weekly PDF</span>
+                    </button>
+                    <button
+                        onClick={async () => {
+                            setIsDownloading(true);
+                            try {
+                                await downloadMonthlyReportPDF();
+                                toast.success('Monthly Report downloaded');
+                            } catch {
+                                toast.error('Failed to download Monthly report');
+                            } finally {
+                                setIsDownloading(false);
+                            }
+                        }}
+                        disabled={isDownloading}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-background-secondary border border-card-border text-foreground font-semibold rounded-xl hover:bg-background-tertiary transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    >
+                        {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                        <span>Monthly PDF</span>
+                    </button>
+                </div>
             </div>
 
             {/* Date Selector */}

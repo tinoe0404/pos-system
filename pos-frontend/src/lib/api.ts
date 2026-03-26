@@ -21,6 +21,28 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        // Unify the error message from the backend response into standard JS Error universally
+        if (error.response?.data) {
+            const data = error.response.data;
+            if (data.details && Array.isArray(data.details)) {
+                // Formatting Zod details nicely
+                const fields = data.details.map((d: any) => `${(d.instancePath || '').replace('/', '')}: ${d.message}`).join(', ');
+                error.message = `${data.message || 'Validation error'}: ${fields}`;
+            } else if (data.message) {
+                error.message = data.message;
+            } else if (data.error) {
+                error.message = data.error;
+            }
+        } else if (!error.response) {
+            error.message = 'Network Error: Cannot reach server';
+        }
+        return Promise.reject(error);
+    }
+);
+
 export const voidSale = async (id: string, reason: string, pin?: string) => {
     return api.post(`/api/sales/${id}/void`, { reason, pin });
 };

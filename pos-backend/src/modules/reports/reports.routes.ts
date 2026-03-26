@@ -8,6 +8,8 @@ import {
 } from './reports.schema';
 import {
   generateDailyPDFHandler,
+  generateWeeklyPDFHandler,
+  generateMonthlyPDFHandler,
   getDailyJsonReportHandler,
   getWeeklyJsonReportHandler,
   getMonthlyJsonReportHandler,
@@ -78,6 +80,32 @@ async function reportsRoutes(app: FastifyInstance) {
       },
     },
     getMonthlyJsonReportHandler
+  );
+
+  // GET /api/reports/weekly/pdf - Generate weekly sales PDF (Admin only)
+  server.get(
+    '/weekly/pdf',
+    {
+      onRequest: [authenticate, requireRole('admin')],
+      schema: {
+        description: 'Generate and download weekly sales report as PDF',
+        tags: ['reports'],
+      },
+    },
+    generateWeeklyPDFHandler
+  );
+
+  // GET /api/reports/monthly/pdf - Generate monthly sales PDF (Admin only)
+  server.get(
+    '/monthly/pdf',
+    {
+      onRequest: [authenticate, requireRole('admin')],
+      schema: {
+        description: 'Generate and download monthly sales report as PDF',
+        tags: ['reports'],
+      },
+    },
+    generateMonthlyPDFHandler
   );
 }
 

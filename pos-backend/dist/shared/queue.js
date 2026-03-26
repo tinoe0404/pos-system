@@ -32,12 +32,14 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.salesWorker = exports.salesQueue = void 0;
 const bullmq_1 = require("bullmq");
-const client_1 = require("@prisma/client");
+const prisma_1 = __importDefault(require("./prisma"));
 const redis_1 = __importStar(require("./redis"));
-const prisma = new client_1.PrismaClient();
 // Queue configuration
 exports.salesQueue = new bullmq_1.Queue('sales-queue', {
     connection: (0, redis_1.getRedisConnectionConfig)(),
@@ -61,7 +63,7 @@ async function processStockDeduction(job) {
     console.log(`🔄 Processing stock deduction for Sale ID: ${saleId}`);
     try {
         // First check if sale exists
-        const saleExists = await prisma.sale.findUnique({
+        const saleExists = await prisma_1.default.sale.findUnique({
             where: { id: saleId },
         });
         if (!saleExists) {
@@ -69,7 +71,7 @@ async function processStockDeduction(job) {
             return { success: false, reason: 'Sale not found' };
         }
         // Use transaction to ensure all stock updates succeed or fail together
-        await prisma.$transaction(async (tx) => {
+        await prisma_1.default.$transaction(async (tx) => {
             for (const item of items) {
                 // Get current product
                 const product = await tx.product.findUnique({
@@ -82,13 +84,24 @@ async function processStockDeduction(job) {
                 if (product.stock < item.quantity) {
                     throw new Error(`Insufficient stock for product ${product.name}. Available: ${product.stock}, Required: ${item.quantity}`);
                 }
-                // Decrement stock
+                // Decrement stock and record stock movement
                 await tx.product.update({
                     where: { id: item.productId },
                     data: {
                         stock: {
                             decrement: item.quantity,
                         },
+                    },
+                });
+                await tx.stockMovement.create({
+                    data: {
+                        product_id: item.productId,
+                        type: 'SALE',
+                        quantity_change: -item.quantity,
+                        previous_stock: product.stock,
+                        new_stock: product.stock - item.quantity,
+                        reference_id: saleId,
+                        created_by: saleExists.user_id,
                     },
                 });
                 console.log(`✅ Deducted ${item.quantity} units from ${product.name} (SKU: ${product.sku})`);
@@ -109,11 +122,11 @@ async function processStockDeduction(job) {
         console.error(`❌ Failed to process sale ${saleId}:`, error);
         // Try to update sale status to FAILED (but don't fail if sale doesn't exist)
         try {
-            const saleExists = await prisma.sale.findUnique({
+            const saleExists = await prisma_1.default.sale.findUnique({
                 where: { id: saleId },
             });
             if (saleExists) {
-                await prisma.sale.update({
+                await prisma_1.default.sale.update({
                     where: { id: saleId },
                     data: { status: 'FAILED' },
                 });

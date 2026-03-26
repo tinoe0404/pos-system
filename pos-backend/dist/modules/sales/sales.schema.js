@@ -10,8 +10,9 @@ exports.saleItemInputSchema = zod_1.z.object({
 });
 exports.createSaleSchema = zod_1.z.object({
     items: zod_1.z.array(exports.saleItemInputSchema).min(1, 'At least one item is required'),
-    paymentMethod: zod_1.z.enum(['CASH', 'ECOCASH']).default('CASH'),
+    paymentMethod: zod_1.z.enum(['CASH', 'ECOCASH', 'TAB']).default('CASH'),
     tabId: zod_1.z.string().optional(),
+    discount: zod_1.z.number().min(0).optional(),
 });
 exports.voidSaleSchema = zod_1.z.object({
     reason: zod_1.z.string().min(1, 'Reason is required'),
@@ -30,6 +31,7 @@ exports.saleItemResponseSchema = zod_1.z.object({
     product_id: zod_1.z.string(),
     quantity: zod_1.z.number(),
     price_at_sale: zod_1.z.string(), // Decimal as string
+    productName: zod_1.z.string().optional(),
 });
 // Extended sale item with product details
 exports.saleItemWithProductSchema = zod_1.z.object({
@@ -55,7 +57,7 @@ exports.saleResponseSchema = zod_1.z.object({
     user_id: zod_1.z.string(),
     total: zod_1.z.string(), // Decimal as string
     status: zod_1.z.enum(['PENDING', 'COMPLETED', 'FAILED']),
-    payment_method: zod_1.z.enum(['CASH', 'ECOCASH']),
+    payment_method: zod_1.z.enum(['CASH', 'ECOCASH', 'TAB']),
     created_at: zod_1.z.union([zod_1.z.date(), zod_1.z.string()]),
     updated_at: zod_1.z.union([zod_1.z.date(), zod_1.z.string()]),
     items: zod_1.z.array(exports.saleItemResponseSchema).optional(),
@@ -77,7 +79,7 @@ exports.publicReceiptResponseSchema = zod_1.z.object({
     id: zod_1.z.string(),
     total: zod_1.z.string(),
     status: zod_1.z.enum(['PENDING', 'COMPLETED', 'FAILED']),
-    payment_method: zod_1.z.enum(['CASH', 'ECOCASH']),
+    payment_method: zod_1.z.enum(['CASH', 'ECOCASH', 'TAB']),
     created_at: zod_1.z.union([zod_1.z.date(), zod_1.z.string()]),
     items: zod_1.z.array(zod_1.z.object({
         id: zod_1.z.string(),

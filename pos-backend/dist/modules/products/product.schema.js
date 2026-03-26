@@ -12,6 +12,13 @@ exports.createProductSchema = zod_1.z.object({
     sku: zod_1.z.string().min(1).max(100),
     category: zod_1.z.string().max(100).optional(),
     is_active: zod_1.z.boolean().default(true),
+    // Beer-specific fields
+    abv: zod_1.z.number().min(0).max(100).optional(),
+    ibu: zod_1.z.number().int().min(0).optional(),
+    brewery: zod_1.z.string().max(200).optional(),
+    style: zod_1.z.string().max(100).optional(),
+    is_tap_item: zod_1.z.boolean().default(false),
+    unit_volume: zod_1.z.number().positive().optional(),
 });
 exports.updateProductSchema = zod_1.z.object({
     name: zod_1.z.string().min(1).max(200).optional(),
@@ -22,6 +29,13 @@ exports.updateProductSchema = zod_1.z.object({
     sku: zod_1.z.string().min(1).max(100).optional(),
     category: zod_1.z.string().max(100).optional(),
     is_active: zod_1.z.boolean().optional(),
+    // Beer-specific fields
+    abv: zod_1.z.number().min(0).max(100).optional(),
+    ibu: zod_1.z.number().int().min(0).optional(),
+    brewery: zod_1.z.string().max(200).optional(),
+    style: zod_1.z.string().max(100).optional(),
+    is_tap_item: zod_1.z.boolean().optional(),
+    unit_volume: zod_1.z.number().positive().optional(),
 });
 // Output schemas - Accept both Date and string for dates (for Redis cache compatibility)
 exports.productResponseSchema = zod_1.z.object({
@@ -34,6 +48,13 @@ exports.productResponseSchema = zod_1.z.object({
     sku: zod_1.z.string(),
     category: zod_1.z.string().nullable(),
     is_active: zod_1.z.boolean(),
+    // Beer-specific fields
+    abv: zod_1.z.string().nullable().optional(), // Decimal as string from Prisma
+    ibu: zod_1.z.number().nullable().optional(),
+    brewery: zod_1.z.string().nullable().optional(),
+    style: zod_1.z.string().nullable().optional(),
+    is_tap_item: zod_1.z.boolean().optional(),
+    unit_volume: zod_1.z.string().nullable().optional(), // Decimal as string from Prisma
     created_at: zod_1.z.union([zod_1.z.date(), zod_1.z.string()]), // Accept both Date and string
     updated_at: zod_1.z.union([zod_1.z.date(), zod_1.z.string()]), // Accept both Date and string
 });

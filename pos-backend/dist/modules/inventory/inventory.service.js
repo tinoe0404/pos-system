@@ -4,9 +4,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.inventoryService = exports.InventoryService = void 0;
-const client_1 = require("@prisma/client");
+const prisma_1 = __importDefault(require("../../shared/prisma"));
 const redis_1 = __importDefault(require("../../shared/redis"));
-const prisma = new client_1.PrismaClient();
 const CACHE_KEY = 'all_products';
 class InventoryService {
     /**
@@ -15,22 +14,34 @@ class InventoryService {
     async restockProduct(data) {
         try {
             // Get current product
-            const product = await prisma.product.findUnique({
+            const product = await prisma_1.default.product.findUnique({
                 where: { id: data.productId },
             });
             if (!product) {
                 throw new Error('Product not found');
             }
             const previousStock = product.stock;
-            // Increment stock
-            const updatedProduct = await prisma.product.update({
-                where: { id: data.productId },
-                data: {
-                    stock: {
-                        increment: data.quantity,
+            // Use a transaction to update stock and record movement
+            const [updatedProduct] = await prisma_1.default.$transaction([
+                prisma_1.default.product.update({
+                    where: { id: data.productId },
+                    data: {
+                        stock: {
+                            increment: data.quantity,
+                        },
                     },
-                },
-            });
+                }),
+                prisma_1.default.stockMovement.create({
+                    data: {
+                        product_id: data.productId,
+                        type: 'RESTOCK',
+                        quantity_change: data.quantity,
+                        previous_stock: previousStock,
+                        new_stock: previousStock + data.quantity,
+                        created_by: data.userId,
+                    },
+                }),
+            ]);
             // Invalidate cache
             await redis_1.default.del(CACHE_KEY);
             console.log('🗑️  Cache INVALIDATED after restock');
@@ -64,20 +75,34 @@ class InventoryService {
     async adjustStock(data) {
         try {
             // Get current product
-            const product = await prisma.product.findUnique({
+            const product = await prisma_1.default.product.findUnique({
                 where: { id: data.productId },
             });
             if (!product) {
                 throw new Error('Product not found');
             }
             const previousStock = product.stock;
-            // Set stock explicitly
-            const updatedProduct = await prisma.product.update({
-                where: { id: data.productId },
-                data: {
-                    stock: data.quantity,
-                },
-            });
+            const quantityChange = data.quantity - previousStock;
+            // Set stock explicitly and record movement
+            const [updatedProduct] = await prisma_1.default.$transaction([
+                prisma_1.default.product.update({
+                    where: { id: data.productId },
+                    data: {
+                        stock: data.quantity,
+                    },
+                }),
+                prisma_1.default.stockMovement.create({
+                    data: {
+                        product_id: data.productId,
+                        type: 'ADJUSTMENT',
+                        quantity_change: quantityChange,
+                        previous_stock: previousStock,
+                        new_stock: data.quantity,
+                        reason: data.reason,
+                        created_by: data.userId,
+                    },
+                }),
+            ]);
             // Invalidate cache
             await redis_1.default.del(CACHE_KEY);
             console.log('🗑️  Cache INVALIDATED after stock adjustment');
@@ -116,7 +141,7 @@ class InventoryService {
             // OR since we added an index, we can just fetch them if we had a computed column.
             // But standard Prisma findMany `where: { stock: { lte: prisma.product.fields.min_stock } }` is not supported.
             // Let's use queryRaw for efficiency
-            const products = await prisma.$queryRaw `
+            const products = await prisma_1.default.$queryRaw `
         SELECT id, name, sku, stock, min_stock as "minStock", price 
         FROM products 
         WHERE stock <= min_stock AND is_active = true
@@ -128,6 +153,40 @@ class InventoryService {
             console.error('Error fetching low stock products:', error);
             throw error;
         }
+    }
+    /**
+     * Get paginated stock movement history
+     */
+    async getStockHistory(filters, page, limit) {
+        const where = {};
+        if (filters.productId)
+            where.product_id = filters.productId;
+        if (filters.type)
+            where.type = filters.type;
+        const [movements, total] = await Promise.all([
+            prisma_1.default.stockMovement.findMany({
+                where,
+                orderBy: { created_at: 'desc' },
+                skip: (page - 1) * limit,
+                take: limit,
+                include: {
+                    product: {
+                        select: { name: true, sku: true },
+                    },
+                },
+            }),
+            prisma_1.default.stockMovement.count({ where }),
+        ]);
+        // Populate user names if needed, but for now we just return created_by
+        return {
+            movements,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
     }
 }
 exports.InventoryService = InventoryService;

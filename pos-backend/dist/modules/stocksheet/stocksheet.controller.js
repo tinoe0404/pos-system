@@ -21,7 +21,7 @@ async function generateStockSheetPDFHandler(request, reply) {
         // Set headers for PDF download
         const filename = `daily-stock-sheet-${dateString || new Date().toISOString().split('T')[0]}.pdf`;
         reply.header('Content-Type', 'application/pdf');
-        reply.header('Content-Disposition', `attachment; filename="${filename}"`);
+        reply.header('Content-Disposition', `inline; filename="${filename}"`);
         return reply.send(pdfStream);
     }
     catch (error) {

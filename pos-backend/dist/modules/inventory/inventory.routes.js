@@ -29,5 +29,16 @@ async function inventoryRoutes(app) {
     server.get('/low-stock', {
         onRequest: [auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)('admin')],
     }, inventory_controller_1.getLowStockHandler);
+    // GET /api/inventory/history - Get stock movement history (Protected: Admin only)
+    server.get('/history', {
+        onRequest: [auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)('admin')],
+        schema: {
+            querystring: inventory_schema_1.stockHistoryQuerySchema,
+        },
+    }, inventory_controller_1.getStockHistoryHandler);
+    // GET /api/inventory/analytics - Get comprehensive analytics (Protected: Admin only)
+    server.get('/analytics', {
+        onRequest: [auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)('admin')],
+    }, inventory_controller_1.getAnalyticsHandler);
 }
 exports.default = inventoryRoutes;

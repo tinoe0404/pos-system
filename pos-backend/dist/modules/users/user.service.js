@@ -4,16 +4,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.userService = exports.UserService = void 0;
-const client_1 = require("@prisma/client");
+const prisma_1 = __importDefault(require("../../shared/prisma"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
-const prisma = new client_1.PrismaClient();
 class UserService {
     /**
      * Get all users
      */
     async getAllUsers() {
         try {
-            const users = await prisma.user.findMany({
+            const users = await prisma_1.default.user.findMany({
                 orderBy: { created_at: 'desc' },
                 select: {
                     id: true,
@@ -40,7 +39,7 @@ class UserService {
         try {
             // Hash password before saving
             const password_hash = await bcrypt_1.default.hash(data.password, 10);
-            const user = await prisma.user.create({
+            const user = await prisma_1.default.user.create({
                 data: {
                     username: data.username,
                     password_hash,
@@ -74,7 +73,7 @@ class UserService {
      */
     async deactivateUser(id) {
         try {
-            const user = await prisma.user.update({
+            const user = await prisma_1.default.user.update({
                 where: { id },
                 data: { is_active: false },
                 select: {
@@ -104,7 +103,7 @@ class UserService {
      */
     async getUserById(id) {
         try {
-            const user = await prisma.user.findUnique({
+            const user = await prisma_1.default.user.findUnique({
                 where: { id },
                 select: {
                     id: true,
@@ -131,7 +130,7 @@ class UserService {
         try {
             const pin_hash = await bcrypt_1.default.hash(pin, 10);
             // Using type assertion until Prisma client updates
-            await prisma.user.update({
+            await prisma_1.default.user.update({
                 where: { id: userId },
                 data: {
                     pin_hash
@@ -150,7 +149,7 @@ class UserService {
      */
     async verifyPin(userId, pin) {
         try {
-            const user = await prisma.user.findUnique({
+            const user = await prisma_1.default.user.findUnique({
                 where: { id: userId },
                 select: { pin_hash: true },
             });
@@ -172,7 +171,7 @@ class UserService {
         try {
             // Find all active admins with a PIN set
             // @ts-ignore - pin_hash not yet in types
-            const admins = await prisma.user.findMany({
+            const admins = await prisma_1.default.user.findMany({
                 where: {
                     role: 'admin',
                     is_active: true,

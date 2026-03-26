@@ -1,13 +1,16 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.refundService = void 0;
 const client_1 = require("@prisma/client");
+const prisma_1 = __importDefault(require("../../shared/prisma"));
 const register_service_1 = require("../register/register.service"); // To log cash out
-const prisma = new client_1.PrismaClient();
 exports.refundService = {
     async processRefund(userId, data) {
         // 1. Fetch original sale with items
-        const sale = await prisma.sale.findUnique({
+        const sale = await prisma_1.default.sale.findUnique({
             where: { id: data.saleId },
             include: { items: true }
         });
@@ -35,7 +38,7 @@ exports.refundService = {
             });
         }
         // 3. Transaction: Create Refund, Restore Stock, Log Register
-        const result = await prisma.$transaction(async (tx) => {
+        const result = await prisma_1.default.$transaction(async (tx) => {
             // Create Refund Record
             const refund = await tx.refund.create({
                 data: {

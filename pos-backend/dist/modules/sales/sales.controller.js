@@ -7,6 +7,7 @@ exports.getTodaySalesHandler = getTodaySalesHandler;
 exports.getPublicReceiptHandler = getPublicReceiptHandler;
 exports.voidSaleHandler = voidSaleHandler;
 const sales_service_1 = require("./sales.service");
+const errors_1 = require("../../shared/errors");
 async function createSaleHandler(request, reply) {
     try {
         const user = request.user;
@@ -15,152 +16,72 @@ async function createSaleHandler(request, reply) {
         return reply.code(201).send(sale);
     }
     catch (error) {
-        request.log.error(error);
-        if (error instanceof Error) {
-            // Handle product not found error
-            if (error.message.startsWith('Products not found:')) {
-                return reply.code(404).send({
-                    error: 'Not found',
-                    message: error.message,
-                });
-            }
-            // Handle insufficient stock error
-            if (error.message.startsWith('Insufficient stock')) {
-                return reply.code(400).send({
-                    error: 'Bad Request',
-                    message: error.message,
-                });
-            }
-            return reply.code(500).send({
-                error: 'Internal server error',
-                message: error.message,
-            });
+        if (error.message?.startsWith('Products not found:')) {
+            throw new errors_1.NotFoundError(error.message);
         }
-        return reply.code(500).send({
-            error: 'Internal server error',
-            message: 'Failed to create sale',
-        });
+        if (error.message?.startsWith('Insufficient stock')) {
+            throw new errors_1.BadRequestError(error.message);
+        }
+        throw error;
     }
 }
 async function getSaleByIdHandler(request, reply) {
-    try {
-        const { id } = request.params;
-        const sale = await sales_service_1.salesService.getSaleById(id);
-        if (!sale) {
-            return reply.code(404).send({
-                error: 'Not found',
-                message: 'Sale not found',
-            });
-        }
-        return reply.code(200).send(sale);
+    const { id } = request.params;
+    const sale = await sales_service_1.salesService.getSaleById(id);
+    if (!sale) {
+        throw new errors_1.NotFoundError('Sale not found');
     }
-    catch (error) {
-        request.log.error(error);
-        return reply.code(500).send({
-            error: 'Internal server error',
-            message: 'Failed to fetch sale',
-        });
-    }
+    return reply.code(200).send(sale);
 }
 async function getAllSalesHandler(request, reply) {
-    try {
-        const user = request.user;
-        const queryParams = request.query;
-        // Cashiers can only see their own sales
-        const filters = {};
-        if (user.role === 'cashier') {
-            filters.userId = user.id;
-        }
-        if (queryParams.status) {
-            filters.status = queryParams.status;
-        }
-        // Pass pagination params
-        const pagination = {
-            skip: queryParams.skip,
-            take: queryParams.take,
-        };
-        const result = await sales_service_1.salesService.getAllSales(filters, pagination);
-        return reply.code(200).send(result);
+    const user = request.user;
+    const queryParams = request.query;
+    const filters = {};
+    if (user.role === 'cashier') {
+        filters.userId = user.id;
     }
-    catch (error) {
-        request.log.error(error);
-        return reply.code(500).send({
-            error: 'Internal server error',
-            message: 'Failed to fetch sales',
-        });
+    if (queryParams.status) {
+        filters.status = queryParams.status;
     }
+    const pagination = {
+        skip: queryParams.skip,
+        take: queryParams.take,
+    };
+    const result = await sales_service_1.salesService.getAllSales(filters, pagination);
+    return reply.code(200).send(result);
 }
 async function getTodaySalesHandler(request, reply) {
-    try {
-        const user = request.user;
-        // Cashiers can only see their own sales
-        const filters = {};
-        if (user.role === 'cashier') {
-            filters.userId = user.id;
-        }
-        const result = await sales_service_1.salesService.getTodaySales(filters);
-        return reply.code(200).send(result);
+    const user = request.user;
+    const filters = {};
+    if (user.role === 'cashier') {
+        filters.userId = user.id;
     }
-    catch (error) {
-        request.log.error(error);
-        return reply.code(500).send({
-            error: 'Internal server error',
-            message: 'Failed to fetch today\'s sales',
-        });
-    }
+    const result = await sales_service_1.salesService.getTodaySales(filters);
+    return reply.code(200).send(result);
 }
 async function getPublicReceiptHandler(request, reply) {
-    try {
-        const { id } = request.params;
-        const sale = await sales_service_1.salesService.getSaleById(id);
-        if (!sale) {
-            return reply.code(404).send({
-                error: 'Not found',
-                message: 'Receipt not found',
-            });
-        }
-        return reply.code(200).send(sale);
+    const { id } = request.params;
+    const sale = await sales_service_1.salesService.getSaleById(id);
+    if (!sale) {
+        throw new errors_1.NotFoundError('Receipt not found');
     }
-    catch (error) {
-        request.log.error(error);
-        return reply.code(500).send({
-            error: 'Internal server error',
-            message: 'Failed to fetch receipt',
-        });
-    }
+    return reply.code(200).send(sale);
 }
 async function voidSaleHandler(request, reply) {
     try {
         const { id } = request.params;
         const user = request.user;
         const body = request.body;
-        // If cashier, ensure PIN was verified by middleware if required
-        // But middleware check is generic. The business logic is:
-        // "Voiding requires Admin role OR Admin PIN".
-        // We already use `requirePinOrRole('admin')` middleware on this route.
-        // So if we reach here, user is allowed.
-        // Who is actually voiding?
-        // If Admin logged in: user.id
-        // If Cashier with PIN override: user.id (the cashier performs action authorized by PIN)
-        // Or should we track OF WHICH ADMIN the PIN was used?
-        // For now, track the user who performed the action (Cashier), and maybe add "authorized_by" later.
-        // The current schema has `voided_by_id`. We'll use current user ID.
         await sales_service_1.salesService.voidSale(id, user.id, body.reason);
         return reply.code(200).send({ message: 'Sale voided successfully' });
     }
     catch (error) {
-        if (error instanceof Error) {
-            if (error.message === 'Sale not found') {
-                return reply.code(404).send({ error: 'Not found', message: error.message });
-            }
-            if (error.message === 'Sale is already voided') {
-                return reply.code(400).send({ error: 'Bad Request', message: error.message });
-            }
+        if (error.message === 'Sale not found') {
+            throw new errors_1.NotFoundError(error.message);
         }
-        request.log.error(error);
-        return reply.code(500).send({
-            error: 'Internal server error',
-            message: 'Failed to void sale',
-        });
+        if (error.message === 'Sale is already voided') {
+            throw new errors_1.BadRequestError(error.message);
+        }
+        throw error;
     }
 }

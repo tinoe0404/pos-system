@@ -134,3 +134,47 @@ export async function getMonthlyJsonReportHandler(
     });
   }
 }
+
+export async function generateWeeklyPDFHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  try {
+    const pdfStream = await reportsService.generateWeeklyPDF();
+    const filename = `weekly-sales-report-${new Date().toISOString().split('T')[0]}.pdf`;
+
+    reply.header('Content-Type', 'application/pdf');
+    reply.header('Content-Disposition', `attachment; filename="${filename}"`);
+
+    return reply.send(pdfStream);
+  } catch (error: unknown) {
+    request.log.error(error);
+
+    return reply.code(500).send({
+      error: 'Internal server error',
+      message: 'Failed to generate Weekly PDF report',
+    });
+  }
+}
+
+export async function generateMonthlyPDFHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  try {
+    const pdfStream = await reportsService.generateMonthlyPDF();
+    const filename = `monthly-sales-report-${new Date().toISOString().split('T')[0]}.pdf`;
+
+    reply.header('Content-Type', 'application/pdf');
+    reply.header('Content-Disposition', `attachment; filename="${filename}"`);
+
+    return reply.send(pdfStream);
+  } catch (error: unknown) {
+    request.log.error(error);
+
+    return reply.code(500).send({
+      error: 'Internal server error',
+      message: 'Failed to generate Monthly PDF report',
+    });
+  }
+}

@@ -4,9 +4,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.productService = exports.ProductService = void 0;
-const client_1 = require("@prisma/client");
+const prisma_1 = __importDefault(require("../../shared/prisma"));
 const redis_1 = __importDefault(require("../../shared/redis"));
-const prisma = new client_1.PrismaClient();
 const CACHE_KEY = 'all_products';
 const CACHE_TTL = 3600; // 1 hour in seconds
 class ProductService {
@@ -27,13 +26,19 @@ class ProductService {
             }
             console.log('💾 Cache MISS: Fetching products from Database');
             // Fetch from database
-            const products = await prisma.product.findMany({
+            const products = await prisma_1.default.product.findMany({
                 orderBy: { created_at: 'desc' },
             });
             // Convert Decimal to string for JSON serialization
             const serializedProducts = products.map((p) => ({
                 ...p,
                 price: p.price.toString(),
+                abv: p.abv ? p.abv.toString() : null,
+                unit_volume: p.unit_volume ? p.unit_volume.toString() : null,
+                ibu: p.ibu,
+                brewery: p.brewery,
+                style: p.style,
+                is_tap_item: p.is_tap_item,
             }));
             // Save to Redis cache
             await redis_1.default.setex(CACHE_KEY, CACHE_TTL, JSON.stringify(serializedProducts));
@@ -53,7 +58,7 @@ class ProductService {
      */
     async getProductById(id) {
         try {
-            const product = await prisma.product.findUnique({
+            const product = await prisma_1.default.product.findUnique({
                 where: { id },
             });
             if (!product) {
@@ -62,6 +67,8 @@ class ProductService {
             return {
                 ...product,
                 price: product.price.toString(),
+                abv: product.abv ? product.abv.toString() : null,
+                unit_volume: product.unit_volume ? product.unit_volume.toString() : null,
             };
         }
         catch (error) {
@@ -74,7 +81,7 @@ class ProductService {
      */
     async createProduct(data) {
         try {
-            const product = await prisma.product.create({
+            const product = await prisma_1.default.product.create({
                 data: {
                     name: data.name,
                     description: data.description,
@@ -83,6 +90,12 @@ class ProductService {
                     sku: data.sku,
                     category: data.category,
                     is_active: data.is_active,
+                    abv: data.abv,
+                    ibu: data.ibu,
+                    brewery: data.brewery,
+                    style: data.style,
+                    is_tap_item: data.is_tap_item,
+                    unit_volume: data.unit_volume,
                 },
             });
             // Invalidate cache immediately
@@ -91,6 +104,8 @@ class ProductService {
             return {
                 ...product,
                 price: product.price.toString(),
+                abv: product.abv ? product.abv.toString() : null,
+                unit_volume: product.unit_volume ? product.unit_volume.toString() : null,
             };
         }
         catch (error) {
@@ -124,7 +139,20 @@ class ProductService {
                 updateData.category = data.category;
             if (data.is_active !== undefined)
                 updateData.is_active = data.is_active;
-            const product = await prisma.product.update({
+            // Beer-specific fields
+            if (data.abv !== undefined)
+                updateData.abv = data.abv;
+            if (data.ibu !== undefined)
+                updateData.ibu = data.ibu;
+            if (data.brewery !== undefined)
+                updateData.brewery = data.brewery;
+            if (data.style !== undefined)
+                updateData.style = data.style;
+            if (data.is_tap_item !== undefined)
+                updateData.is_tap_item = data.is_tap_item;
+            if (data.unit_volume !== undefined)
+                updateData.unit_volume = data.unit_volume;
+            const product = await prisma_1.default.product.update({
                 where: { id },
                 data: updateData,
             });
@@ -134,6 +162,8 @@ class ProductService {
             return {
                 ...product,
                 price: product.price.toString(),
+                abv: product.abv ? product.abv.toString() : null,
+                unit_volume: product.unit_volume ? product.unit_volume.toString() : null,
             };
         }
         catch (error) {
@@ -159,7 +189,7 @@ class ProductService {
      */
     async deleteProduct(id) {
         try {
-            await prisma.product.delete({
+            await prisma_1.default.product.delete({
                 where: { id },
             });
             // Invalidate cache immediately

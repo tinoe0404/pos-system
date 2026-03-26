@@ -1,8 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.registerService = void 0;
 const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = __importDefault(require("../../shared/prisma"));
 exports.registerService = {
     /**
      * Open a new cash register for the user.
@@ -10,7 +13,7 @@ exports.registerService = {
      */
     async openRegister(userId, openingAmount) {
         // Check if user already has an open register
-        const existing = await prisma.cashRegister.findFirst({
+        const existing = await prisma_1.default.cashRegister.findFirst({
             where: {
                 user_id: userId,
                 closed_at: null,
@@ -19,7 +22,7 @@ exports.registerService = {
         if (existing) {
             throw new Error('You already have an open register. Close it before opening a new one.');
         }
-        const register = await prisma.cashRegister.create({
+        const register = await prisma_1.default.cashRegister.create({
             data: {
                 user_id: userId,
                 opening_amount: new client_1.Prisma.Decimal(openingAmount),
@@ -32,7 +35,7 @@ exports.registerService = {
      * Close the current open register for the user.
      */
     async closeRegister(userId, closingAmount, notes) {
-        const register = await prisma.cashRegister.findFirst({
+        const register = await prisma_1.default.cashRegister.findFirst({
             where: {
                 user_id: userId,
                 closed_at: null,
@@ -61,7 +64,7 @@ exports.registerService = {
                     break;
             }
         }
-        const updated = await prisma.cashRegister.update({
+        const updated = await prisma_1.default.cashRegister.update({
             where: { id: register.id },
             data: {
                 closed_at: new Date(),
@@ -80,7 +83,7 @@ exports.registerService = {
      * Get the current open register for the user.
      */
     async getCurrentRegister(userId) {
-        const register = await prisma.cashRegister.findFirst({
+        const register = await prisma_1.default.cashRegister.findFirst({
             where: {
                 user_id: userId,
                 closed_at: null,
@@ -96,7 +99,7 @@ exports.registerService = {
      */
     async cashIn(userId, amount, note) {
         const register = await getOpenRegister(userId);
-        const log = await prisma.cashRegisterLog.create({
+        const log = await prisma_1.default.cashRegisterLog.create({
             data: {
                 register_id: register.id,
                 type: 'CASH_IN',
@@ -111,7 +114,7 @@ exports.registerService = {
      */
     async cashOut(userId, amount, note) {
         const register = await getOpenRegister(userId);
-        const log = await prisma.cashRegisterLog.create({
+        const log = await prisma_1.default.cashRegisterLog.create({
             data: {
                 register_id: register.id,
                 type: 'CASH_OUT',
@@ -125,7 +128,7 @@ exports.registerService = {
      * Record a sale in the cash register log.
      */
     async recordSale(userId, saleAmount) {
-        const register = await prisma.cashRegister.findFirst({
+        const register = await prisma_1.default.cashRegister.findFirst({
             where: {
                 user_id: userId,
                 closed_at: null,
@@ -134,7 +137,7 @@ exports.registerService = {
         // If no register is open, silently skip (don't block sales)
         if (!register)
             return null;
-        const log = await prisma.cashRegisterLog.create({
+        const log = await prisma_1.default.cashRegisterLog.create({
             data: {
                 register_id: register.id,
                 type: 'SALE',
@@ -146,7 +149,7 @@ exports.registerService = {
     },
 };
 async function getOpenRegister(userId) {
-    const register = await prisma.cashRegister.findFirst({
+    const register = await prisma_1.default.cashRegister.findFirst({
         where: {
             user_id: userId,
             closed_at: null,
