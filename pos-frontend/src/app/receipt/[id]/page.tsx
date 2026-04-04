@@ -34,7 +34,7 @@ export default function ReceiptPage() {
     useEffect(() => {
         const fetchReceipt = async () => {
             try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/sales/${params.id}/receipt`);
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/sales/${params.id}/receipt`);
                 if (!response.ok) {
                     throw new Error('Receipt not found');
                 }

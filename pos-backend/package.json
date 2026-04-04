@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "High-Performance POS System",
   "main": "dist/server.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "prisma generate && tsc",
@@ -33,13 +36,13 @@
     "@prisma/client": "^5.22.0",
     "bcrypt": "^5.1.1",
     "bullmq": "^5.1.9",
+    "dotenv": "^17.2.3",
     "fastify": "^4.26.0",
     "fastify-type-provider-zod": "^2.0.0",
     "ioredis": "^5.3.2",
     "pdfkit": "^0.17.2",
     "pdfkit-table": "^0.1.99",
     "prisma": "^5.22.0",
-    "tsx": "^4.7.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
@@ -48,8 +51,8 @@
     "@types/node-fetch": "^2.6.13",
     "@types/pdfkit": "^0.17.4",
     "@vitest/ui": "^1.2.2",
-    "dotenv": "^17.2.3",
     "node-fetch": "^2.7.0",
+    "tsx": "^4.7.0",
     "typescript": "^5.3.3",
     "vitest": "^1.2.2"
   },

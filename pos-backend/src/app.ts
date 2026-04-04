@@ -60,9 +60,11 @@ export async function buildApp() {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return cb(null, true);
 
-      // Always allow localhost in development
-      if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
-        return cb(null, true);
+      // Allow localhost only in development
+      if (process.env.NODE_ENV !== 'production') {
+        if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
+          return cb(null, true);
+        }
       }
 
       // Check against configured production origins
