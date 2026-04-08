@@ -22,7 +22,9 @@ exports.voidSaleSchema = zod_1.z.object({
 exports.salesPaginationSchema = zod_1.z.object({
     status: zod_1.z.enum(['PENDING', 'COMPLETED', 'FAILED']).optional(),
     skip: zod_1.z.coerce.number().int().min(0).default(0),
-    take: zod_1.z.coerce.number().int().min(1).max(100).default(20),
+    take: zod_1.z.coerce.number().int().min(1).max(500).default(50),
+    from: zod_1.z.string().optional(), // ISO date string — start of range
+    to: zod_1.z.string().optional(), // ISO date string — end of range
 });
 // Output schemas
 exports.saleItemResponseSchema = zod_1.z.object({
@@ -100,6 +102,6 @@ exports.salesListResponseSchema = zod_1.z.object({
     pagination: zod_1.z.object({
         skip: zod_1.z.number(),
         take: zod_1.z.number(),
-        total: zod_1.z.number(),
+        total: zod_1.z.number().optional(),
     }).optional(),
 });

@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.refundService = void 0;
 const client_1 = require("@prisma/client");
 const prisma_1 = __importDefault(require("../../shared/prisma"));
-const register_service_1 = require("../register/register.service"); // To log cash out
 exports.refundService = {
     async processRefund(userId, data) {
         // 1. Fetch original sale with items
@@ -62,13 +61,7 @@ exports.refundService = {
             }
             return refund;
         });
-        // 4. Update Cash Register
-        try {
-            await register_service_1.registerService.cashOut(userId, Number(totalRefundAmount), `Refund for sale #${sale.id.slice(-6)}`);
-        }
-        catch (e) {
-            console.warn("Failed to update register log for refund:", e);
-        }
+        // 4. Cash drawer updates handled manually.
         return result;
     }
 };

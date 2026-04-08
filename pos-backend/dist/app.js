@@ -24,7 +24,6 @@ const user_routes_1 = __importDefault(require("./modules/users/user.routes"));
 const inventory_routes_1 = __importDefault(require("./modules/inventory/inventory.routes"));
 const analytics_routes_1 = require("./modules/analytics/analytics.routes");
 const reports_routes_1 = __importDefault(require("./modules/reports/reports.routes"));
-const register_routes_1 = __importDefault(require("./modules/register/register.routes"));
 const refund_routes_1 = require("./modules/refunds/refund.routes");
 const stocksheet_routes_1 = __importDefault(require("./modules/stocksheet/stocksheet.routes"));
 const tabs_routes_1 = __importDefault(require("./modules/tabs/tabs.routes"));
@@ -165,7 +164,6 @@ async function buildApp() {
     await app.register(analytics_routes_1.notificationsRoutes, { prefix: '/api/notifications' });
     await app.register(analytics_routes_1.recommendationsRoutes, { prefix: '/api/recommendations' });
     await app.register(reports_routes_1.default, { prefix: '/api/reports' });
-    await app.register(register_routes_1.default, { prefix: '/api/register' });
     await app.register(refund_routes_1.refundRoutes, { prefix: '/api' });
     await app.register(stocksheet_routes_1.default, { prefix: '/api/reports/stock-sheet' });
     await app.register(tabs_routes_1.default, { prefix: '/api/tabs' });

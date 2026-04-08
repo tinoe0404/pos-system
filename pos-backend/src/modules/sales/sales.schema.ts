@@ -112,7 +112,7 @@ export const salesListResponseSchema = z.object({
   pagination: z.object({
     skip: z.number(),
     take: z.number(),
-    total: z.number(),
+    total: z.number().optional(),
   }).optional(),
 });
 

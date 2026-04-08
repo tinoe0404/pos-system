@@ -1,6 +1,7 @@
 import { Queue, Worker, Job } from 'bullmq';
 import prisma from './prisma';
 import redis, { getRedisConnectionConfig } from './redis';
+import { memcache } from './memcache';
 
 
 // Queue configuration
@@ -103,8 +104,8 @@ async function processStockDeduction(job: Job<StockDeductionJobData>) {
     });
 
     // Invalidate product cache
+    memcache.del('all_products');
     await redis.del('all_products');
-    console.log('🗑️  Cache INVALIDATED after stock deduction');
 
     return { success: true, saleId };
   } catch (error: unknown) {

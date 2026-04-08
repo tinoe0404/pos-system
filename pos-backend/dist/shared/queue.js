@@ -40,6 +40,7 @@ exports.salesWorker = exports.salesQueue = void 0;
 const bullmq_1 = require("bullmq");
 const prisma_1 = __importDefault(require("./prisma"));
 const redis_1 = __importStar(require("./redis"));
+const memcache_1 = require("./memcache");
 // Queue configuration
 exports.salesQueue = new bullmq_1.Queue('sales-queue', {
     connection: (0, redis_1.getRedisConnectionConfig)(),
@@ -114,8 +115,8 @@ async function processStockDeduction(job) {
             console.log(`✅ Sale ${saleId} completed successfully`);
         });
         // Invalidate product cache
+        memcache_1.memcache.del('all_products');
         await redis_1.default.del('all_products');
-        console.log('🗑️  Cache INVALIDATED after stock deduction');
         return { success: true, saleId };
     }
     catch (error) {

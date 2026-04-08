@@ -1,10 +1,12 @@
 import prisma from '../../shared/prisma';
 import redis from '../../shared/redis';
+import { memcache } from '../../shared/memcache';
 import { CreateProductInput, UpdateProductInput } from './product.schema';
 
 
 const CACHE_KEY = 'all_products';
-const CACHE_TTL = 3600; // 1 hour in seconds
+const REDIS_TTL = 3600; // 1 hour in seconds
+const MEMORY_TTL = 10;  // 10 seconds — fast L1 cache
 
 // Helper type for serialized product
 type SerializedProduct = {
@@ -28,25 +30,34 @@ type SerializedProduct = {
 
 export class ProductService {
   /**
-   * Get all products with Redis caching
+   * Get all products with L1 (memory) + L2 (Redis) caching
    */
   async getAllProducts() {
     try {
-      // Try to get from cache first
-      const cached = await redis.get(CACHE_KEY);
-
-      if (cached) {
-        console.log('🎯 Cache HIT: Returning products from Redis');
+      // L1: In-memory cache (instant, no network)
+      const memCached = memcache.get<SerializedProduct[]>(CACHE_KEY);
+      if (memCached) {
         return {
-          products: JSON.parse(cached),
-          count: JSON.parse(cached).length,
+          products: memCached,
+          count: memCached.length,
           cached: true,
         };
       }
 
-      console.log('💾 Cache MISS: Fetching products from Database');
+      // L2: Redis cache (remote, but faster than DB)
+      const redisCached = await redis.get(CACHE_KEY);
+      if (redisCached) {
+        const parsed = JSON.parse(redisCached);
+        // Warm up L1 cache
+        memcache.set(CACHE_KEY, parsed, MEMORY_TTL);
+        return {
+          products: parsed,
+          count: parsed.length,
+          cached: true,
+        };
+      }
 
-      // Fetch from database
+      // L3: Database (slowest)
       const products = await prisma.product.findMany({
         orderBy: { created_at: 'desc' },
       });
@@ -63,12 +74,9 @@ export class ProductService {
         is_tap_item: p.is_tap_item,
       }));
 
-      // Save to Redis cache
-      await redis.setex(
-        CACHE_KEY,
-        CACHE_TTL,
-        JSON.stringify(serializedProducts)
-      );
+      // Save to both caches
+      memcache.set(CACHE_KEY, serializedProducts, MEMORY_TTL);
+      await redis.setex(CACHE_KEY, REDIS_TTL, JSON.stringify(serializedProducts));
 
       return {
         products: serializedProducts,
@@ -129,9 +137,9 @@ export class ProductService {
         },
       });
 
-      // Invalidate cache immediately
+      // Invalidate both caches immediately
+      memcache.del(CACHE_KEY);
       await redis.del(CACHE_KEY);
-      console.log('🗑️  Cache INVALIDATED after product creation');
 
       return {
         ...product,
@@ -181,9 +189,9 @@ export class ProductService {
         data: updateData,
       });
 
-      // Invalidate cache immediately
+      // Invalidate both caches immediately
+      memcache.del(CACHE_KEY);
       await redis.del(CACHE_KEY);
-      console.log('🗑️  Cache INVALIDATED after product update');
 
       return {
         ...product,
@@ -223,9 +231,9 @@ export class ProductService {
         where: { id },
       });
 
-      // Invalidate cache immediately
+      // Invalidate both caches immediately
+      memcache.del(CACHE_KEY);
       await redis.del(CACHE_KEY);
-      console.log('🗑️  Cache INVALIDATED after product deletion');
 
       return { success: true };
     } catch (error: unknown) {

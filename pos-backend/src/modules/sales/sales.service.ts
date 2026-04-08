@@ -162,7 +162,7 @@ export class SalesService {
 
       console.log(`📝 Sale ${result.id} created with status PENDING`);
 
-      // ⚡ Fire-and-forget: Queue stock deduction (don't await)
+      // ⚡ Fire-and-forget: Queue stock deduction (don't await, don't use .then on hot path)
       salesQueue.add(
         'process-stock-deduction',
         {
@@ -173,11 +173,8 @@ export class SalesService {
           })),
         },
         { jobId: `sale-${result.id}` }
-      ).then(() => {
-        console.log(`🚀 Stock deduction job queued for Sale ${result.id}`);
-      }).catch((queueError) => {
+      ).catch((queueError) => {
         console.error('❌ Failed to queue stock deduction job:', queueError);
-        // Sale is already created — mark as FAILED so it can be retried
         prisma.sale.update({
           where: { id: result.id },
           data: { status: 'FAILED' },
@@ -430,8 +427,7 @@ export class SalesService {
         }
       }
 
-      // Get total count for pagination
-      const total = await prisma.sale.count({ where });
+      // Skip count query for performance
 
       // Get paginated sales
       const sales = await prisma.sale.findMany({
@@ -477,7 +473,7 @@ export class SalesService {
           ? {
             skip: pagination.skip,
             take: pagination.take,
-            total,
+            // total omitted to save query
           }
           : undefined,
       };

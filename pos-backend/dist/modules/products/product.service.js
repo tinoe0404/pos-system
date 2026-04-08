@@ -6,26 +6,38 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.productService = exports.ProductService = void 0;
 const prisma_1 = __importDefault(require("../../shared/prisma"));
 const redis_1 = __importDefault(require("../../shared/redis"));
+const memcache_1 = require("../../shared/memcache");
 const CACHE_KEY = 'all_products';
-const CACHE_TTL = 3600; // 1 hour in seconds
+const REDIS_TTL = 3600; // 1 hour in seconds
+const MEMORY_TTL = 10; // 10 seconds — fast L1 cache
 class ProductService {
     /**
-     * Get all products with Redis caching
+     * Get all products with L1 (memory) + L2 (Redis) caching
      */
     async getAllProducts() {
         try {
-            // Try to get from cache first
-            const cached = await redis_1.default.get(CACHE_KEY);
-            if (cached) {
-                console.log('🎯 Cache HIT: Returning products from Redis');
+            // L1: In-memory cache (instant, no network)
+            const memCached = memcache_1.memcache.get(CACHE_KEY);
+            if (memCached) {
                 return {
-                    products: JSON.parse(cached),
-                    count: JSON.parse(cached).length,
+                    products: memCached,
+                    count: memCached.length,
                     cached: true,
                 };
             }
-            console.log('💾 Cache MISS: Fetching products from Database');
-            // Fetch from database
+            // L2: Redis cache (remote, but faster than DB)
+            const redisCached = await redis_1.default.get(CACHE_KEY);
+            if (redisCached) {
+                const parsed = JSON.parse(redisCached);
+                // Warm up L1 cache
+                memcache_1.memcache.set(CACHE_KEY, parsed, MEMORY_TTL);
+                return {
+                    products: parsed,
+                    count: parsed.length,
+                    cached: true,
+                };
+            }
+            // L3: Database (slowest)
             const products = await prisma_1.default.product.findMany({
                 orderBy: { created_at: 'desc' },
             });
@@ -40,8 +52,9 @@ class ProductService {
                 style: p.style,
                 is_tap_item: p.is_tap_item,
             }));
-            // Save to Redis cache
-            await redis_1.default.setex(CACHE_KEY, CACHE_TTL, JSON.stringify(serializedProducts));
+            // Save to both caches
+            memcache_1.memcache.set(CACHE_KEY, serializedProducts, MEMORY_TTL);
+            await redis_1.default.setex(CACHE_KEY, REDIS_TTL, JSON.stringify(serializedProducts));
             return {
                 products: serializedProducts,
                 count: products.length,
@@ -98,9 +111,9 @@ class ProductService {
                     unit_volume: data.unit_volume,
                 },
             });
-            // Invalidate cache immediately
+            // Invalidate both caches immediately
+            memcache_1.memcache.del(CACHE_KEY);
             await redis_1.default.del(CACHE_KEY);
-            console.log('🗑️  Cache INVALIDATED after product creation');
             return {
                 ...product,
                 price: product.price.toString(),
@@ -156,9 +169,9 @@ class ProductService {
                 where: { id },
                 data: updateData,
             });
-            // Invalidate cache immediately
+            // Invalidate both caches immediately
+            memcache_1.memcache.del(CACHE_KEY);
             await redis_1.default.del(CACHE_KEY);
-            console.log('🗑️  Cache INVALIDATED after product update');
             return {
                 ...product,
                 price: product.price.toString(),
@@ -192,9 +205,9 @@ class ProductService {
             await prisma_1.default.product.delete({
                 where: { id },
             });
-            // Invalidate cache immediately
+            // Invalidate both caches immediately
+            memcache_1.memcache.del(CACHE_KEY);
             await redis_1.default.del(CACHE_KEY);
-            console.log('🗑️  Cache INVALIDATED after product deletion');
             return { success: true };
         }
         catch (error) {

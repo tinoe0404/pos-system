@@ -43,6 +43,12 @@ async function getAllSalesHandler(request, reply) {
     if (queryParams.status) {
         filters.status = queryParams.status;
     }
+    if (queryParams.from) {
+        filters.from = queryParams.from;
+    }
+    if (queryParams.to) {
+        filters.to = queryParams.to;
+    }
     const pagination = {
         skip: queryParams.skip,
         take: queryParams.take,

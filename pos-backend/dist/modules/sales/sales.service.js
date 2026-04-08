@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.salesService = exports.SalesService = void 0;
 const prisma_1 = __importDefault(require("../../shared/prisma"));
 const queue_1 = require("../../shared/queue");
-const register_service_1 = require("../register/register.service");
 class SalesService {
     /**
      * Create a new sale and queue stock deduction
@@ -145,29 +144,21 @@ class SalesService {
                 };
             });
             console.log(`📝 Sale ${result.id} created with status PENDING`);
-            // ⚡ Fire-and-forget: Queue stock deduction (don't await)
+            // ⚡ Fire-and-forget: Queue stock deduction (don't await, don't use .then on hot path)
             queue_1.salesQueue.add('process-stock-deduction', {
                 saleId: result.id,
                 items: data.items.map((item) => ({
                     productId: item.productId,
                     quantity: item.quantity,
                 })),
-            }, { jobId: `sale-${result.id}` }).then(() => {
-                console.log(`🚀 Stock deduction job queued for Sale ${result.id}`);
-            }).catch((queueError) => {
+            }, { jobId: `sale-${result.id}` }).catch((queueError) => {
                 console.error('❌ Failed to queue stock deduction job:', queueError);
-                // Sale is already created — mark as FAILED so it can be retried
                 prisma_1.default.sale.update({
                     where: { id: result.id },
                     data: { status: 'FAILED' },
                 }).catch((e) => console.error('Failed to mark sale as FAILED:', e));
             });
-            // ⚡ Fire-and-forget: Record in cash register (only for non-tab sales)
-            if (!data.tabId) {
-                register_service_1.registerService.recordSale(userId, total).catch((regError) => {
-                    console.error('Failed to record sale to register:', regError);
-                });
-            }
+            // Cash drawer updates handled manually.
             return result;
         }
         catch (error) {
@@ -255,8 +246,7 @@ class SalesService {
                 console.log(`💳 Refunded to tab ${sale.tab_id}`);
             }
             else {
-                // Refund to cash drawer log
-                await register_service_1.registerService.recordSale(voidedById, -Number(sale.total));
+                // Cash refunds are handled manually
             }
             console.log(`🚫 Sale ${saleId} voided by ${voidedById}`);
             return true;
@@ -381,8 +371,17 @@ class SalesService {
             if (filters?.status) {
                 where.status = filters.status;
             }
-            // Get total count for pagination
-            const total = await prisma_1.default.sale.count({ where });
+            // Date range filtering
+            if (filters?.from || filters?.to) {
+                where.created_at = {};
+                if (filters.from) {
+                    where.created_at.gte = new Date(filters.from);
+                }
+                if (filters.to) {
+                    where.created_at.lte = new Date(filters.to);
+                }
+            }
+            // Skip count query for performance
             // Get paginated sales
             const sales = await prisma_1.default.sale.findMany({
                 where,
@@ -426,7 +425,7 @@ class SalesService {
                     ? {
                         skip: pagination.skip,
                         take: pagination.take,
-                        total,
+                        // total omitted to save query
                     }
                     : undefined,
             };

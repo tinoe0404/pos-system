@@ -35,7 +35,7 @@ export const useSales = () => {
             const to = new Date().toISOString();
 
             const { data } = await api.get<any>('/api/sales', {
-                params: { from, to, take: 500 },
+                params: { from, to, take: 200 },
             });
             // Transform snake_case API response to camelCase interface
             const transformedSales: Sale[] = data.sales.map((sale: any) => ({
@@ -59,8 +59,8 @@ export const useSales = () => {
                 count: data.count,
             };
         },
-        staleTime: 30 * 1000,           // 30 sec cache — sales need fresher data
-        refetchInterval: 60 * 1000,     // Auto-refresh every 1 min
+        staleTime: 120 * 1000,          // 2 min cache — historical sales don't need real-time freshness
+        refetchInterval: 120 * 1000,    // Auto-refresh every 2 mins
     });
 };
 
