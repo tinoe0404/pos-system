@@ -48,36 +48,40 @@ async function processStockDeduction(job: Job<StockDeductionJobData>) {
       return { success: false, reason: 'Sale not found' };
     }
 
-    // Use transaction to ensure all stock updates succeed or fail together
-    await prisma.$transaction(async (tx) => {
-      for (const item of items) {
-        // Get current product
-        const product = await tx.product.findUnique({
+    // Fetch all products first without holding a transaction lock
+    const productIds = items.map((i) => i.productId);
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+    });
+
+    const queries: any[] = [];
+
+    // Build the query array for the transaction batch
+    for (const item of items) {
+      const product = products.find((p) => p.id === item.productId);
+
+      if (!product) {
+        throw new Error(`Product ${item.productId} not found`);
+      }
+
+      // Check if sufficient stock
+      if (product.stock < item.quantity) {
+        throw new Error(
+          `Insufficient stock for product ${product.name}. Available: ${product.stock}, Required: ${item.quantity}`
+        );
+      }
+
+      // Query 1: Decrement stock
+      queries.push(
+        prisma.product.update({
           where: { id: item.productId },
-        });
+          data: { stock: { decrement: item.quantity } },
+        })
+      );
 
-        if (!product) {
-          throw new Error(`Product ${item.productId} not found`);
-        }
-
-        // Check if sufficient stock
-        if (product.stock < item.quantity) {
-          throw new Error(
-            `Insufficient stock for product ${product.name}. Available: ${product.stock}, Required: ${item.quantity}`
-          );
-        }
-
-        // Decrement stock and record stock movement
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: {
-              decrement: item.quantity,
-            },
-          },
-        });
-
-        await tx.stockMovement.create({
+      // Query 2: Record stock movement
+      queries.push(
+        prisma.stockMovement.create({
           data: {
             product_id: item.productId,
             type: 'SALE',
@@ -87,21 +91,27 @@ async function processStockDeduction(job: Job<StockDeductionJobData>) {
             reference_id: saleId,
             created_by: saleExists.user_id,
           },
-        });
+        })
+      );
+    }
 
-        console.log(
-          `✅ Deducted ${item.quantity} units from ${product.name} (SKU: ${product.sku})`
-        );
-      }
-
-      // Update sale status to COMPLETED
-      await tx.sale.update({
+    // Query 3: Update sale status to COMPLETED
+    queries.push(
+      prisma.sale.update({
         where: { id: saleId },
         data: { status: 'COMPLETED' },
-      });
+      })
+    );
 
-      console.log(`✅ Sale ${saleId} completed successfully`);
+    // Execute all updates in one atomic batched call (bypasses PgBouncer timeout issues!)
+    await prisma.$transaction(queries);
+    
+    items.forEach(item => {
+      const p = products.find(prod => prod.id === item.productId);
+      if (p) console.log(`✅ Deducted ${item.quantity} units from ${p.name} (SKU: ${p.sku})`);
     });
+
+    console.log(`✅ Sale ${saleId} completed successfully`);
 
     // Invalidate product cache
     memcache.del('all_products');

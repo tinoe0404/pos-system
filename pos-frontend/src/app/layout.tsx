@@ -28,7 +28,6 @@ export const viewport: Viewport = {
 
 import Providers from "./providers";
 import { Toaster } from "sonner";
-import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import ThemeProvider from "@/components/ThemeProvider";
 
 export default function RootLayout({
@@ -49,7 +48,6 @@ export default function RootLayout({
             {children}
           </ThemeProvider>
           <Toaster position="top-center" richColors />
-          <ServiceWorkerRegistration />
         </Providers>
       </body>
     </html>
