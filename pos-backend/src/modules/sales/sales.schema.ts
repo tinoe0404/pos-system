@@ -23,7 +23,9 @@ export const voidSaleSchema = z.object({
 export const salesPaginationSchema = z.object({
   status: z.enum(['PENDING', 'COMPLETED', 'FAILED']).optional(),
   skip: z.coerce.number().int().min(0).default(0),
-  take: z.coerce.number().int().min(1).max(100).default(20),
+  take: z.coerce.number().int().min(1).max(500).default(50),
+  from: z.string().optional(), // ISO date string — start of range
+  to: z.string().optional(),   // ISO date string — end of range
 });
 
 // Output schemas

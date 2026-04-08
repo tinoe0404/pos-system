@@ -28,7 +28,6 @@ import {
   recommendationsRoutes,
 } from './modules/analytics/analytics.routes';
 import reportsRoutes from './modules/reports/reports.routes';
-import registerRoutes from './modules/register/register.routes';
 import { refundRoutes } from './modules/refunds/refund.routes';
 import stockSheetRoutes from './modules/stocksheet/stocksheet.routes';
 import tabRoutes from './modules/tabs/tabs.routes';
@@ -184,7 +183,6 @@ export async function buildApp() {
   await app.register(notificationsRoutes, { prefix: '/api/notifications' });
   await app.register(recommendationsRoutes, { prefix: '/api/recommendations' });
   await app.register(reportsRoutes, { prefix: '/api/reports' });
-  await app.register(registerRoutes, { prefix: '/api/register' });
   await app.register(refundRoutes, { prefix: '/api' });
   await app.register(stockSheetRoutes, { prefix: '/api/reports/stock-sheet' });
   await app.register(tabRoutes, { prefix: '/api/tabs' });

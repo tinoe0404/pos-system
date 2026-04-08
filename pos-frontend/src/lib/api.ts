@@ -47,26 +47,6 @@ export const voidSale = async (id: string, reason: string, pin?: string) => {
     return api.post(`/api/sales/${id}/void`, { reason, pin });
 };
 
-export const openRegister = async (openingAmount: number) => {
-    return api.post('/api/register/open', { opening_amount: openingAmount });
-};
-
-export const closeRegister = async (closingAmount: number, notes?: string) => {
-    return api.post('/api/register/close', { closing_amount: closingAmount, notes });
-};
-
-export const getCurrentRegister = async () => {
-    return api.get('/api/register/current');
-};
-
-export const cashIn = async (amount: number, note?: string) => {
-    return api.post('/api/register/cash-in', { amount, note });
-};
-
-export const cashOut = async (amount: number, note?: string) => {
-    return api.post('/api/register/cash-out', { amount, note });
-};
-
 // Tabs
 export const createTab = async (data: { customer_name: string; phone?: string; deposit_amount: number }) => {
     return api.post('/api/tabs', data);

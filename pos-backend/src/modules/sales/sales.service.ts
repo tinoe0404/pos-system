@@ -1,7 +1,6 @@
 import prisma from '../../shared/prisma';
 import { salesQueue } from '../../shared/queue';
 import { CreateSaleInput, SalesPaginationQuery } from './sales.schema';
-import { registerService } from '../register/register.service';
 
 
 export class SalesService {
@@ -185,12 +184,7 @@ export class SalesService {
         }).catch((e) => console.error('Failed to mark sale as FAILED:', e));
       });
 
-      // ⚡ Fire-and-forget: Record in cash register (only for non-tab sales)
-      if (!data.tabId) {
-        registerService.recordSale(userId, total).catch((regError) => {
-          console.error('Failed to record sale to register:', regError);
-        });
-      }
+      // Cash drawer updates handled manually.
 
       return result;
     } catch (error) {
@@ -286,8 +280,7 @@ export class SalesService {
         });
         console.log(`💳 Refunded to tab ${sale.tab_id}`);
       } else {
-        // Refund to cash drawer log
-        await registerService.recordSale(voidedById, -Number(sale.total));
+        // Cash refunds are handled manually
       }
 
       console.log(`🚫 Sale ${saleId} voided by ${voidedById}`);
@@ -412,7 +405,7 @@ export class SalesService {
   }
 
   async getAllSales(
-    filters?: { userId?: string; status?: string },
+    filters?: { userId?: string; status?: string; from?: string; to?: string },
     pagination?: SalesPaginationQuery
   ) {
     try {
@@ -424,6 +417,17 @@ export class SalesService {
 
       if (filters?.status) {
         where.status = filters.status;
+      }
+
+      // Date range filtering
+      if (filters?.from || filters?.to) {
+        where.created_at = {};
+        if (filters.from) {
+          where.created_at.gte = new Date(filters.from);
+        }
+        if (filters.to) {
+          where.created_at.lte = new Date(filters.to);
+        }
       }
 
       // Get total count for pagination

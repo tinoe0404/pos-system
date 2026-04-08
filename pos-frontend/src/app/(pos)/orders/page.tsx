@@ -129,6 +129,7 @@ export default function OrdersPage() {
                                                 #{sale.id.slice(-8).toUpperCase()}
                                             </td>
                                             <td className="px-5 py-3.5 text-sm text-foreground-muted">
+                                                {new Date(sale.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}{' '}
                                                 {new Date(sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </td>
                                             <td className="px-5 py-3.5">
@@ -220,6 +221,7 @@ export default function OrdersPage() {
                                         <div>
                                             <span className="text-lg font-bold text-foreground">${sale.total.toFixed(2)}</span>
                                             <span className="text-xs text-foreground-subtle ml-2">
+                                                {new Date(sale.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}{' '}
                                                 {new Date(sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>

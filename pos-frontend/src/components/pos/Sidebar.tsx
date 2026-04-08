@@ -8,11 +8,7 @@ import { useState } from 'react';
 import { downloadStockSheetPDF } from '@/hooks/useStockSheet';
 import { toast } from 'sonner';
 
-interface SidebarProps {
-    onOpenRegister?: () => void;
-}
-
-export default function Sidebar({ onOpenRegister }: SidebarProps) {
+export default function Sidebar() {
     const router = useRouter();
     const pathname = usePathname();
     const logout = useAuthStore((state) => state.logout);
@@ -81,19 +77,6 @@ export default function Sidebar({ onOpenRegister }: SidebarProps) {
                         </button>
                     );
                 })}
-
-                {/* Register Button */}
-                <button
-                    onClick={() => { if (onOpenRegister) onOpenRegister(); }}
-                    title="Register"
-                    className="relative flex flex-col items-center justify-center p-2.5 rounded-xl transition-all duration-200 group text-foreground-muted hover:bg-background-tertiary hover:text-foreground"
-                >
-                    <Briefcase className="w-5 h-5" />
-                    <span className="text-[10px] mt-1 font-medium leading-none">Register</span>
-                    <span className="absolute left-full ml-3 px-2.5 py-1.5 bg-background-tertiary text-foreground text-xs font-medium rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap border border-card-border z-50">
-                        Shift/Cash
-                    </span>
-                </button>
 
                 {/* Stock Sheet Download Button */}
                 <button

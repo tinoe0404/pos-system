@@ -1,7 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { salesService } from './sales.service';
 import { CreateSaleInput, SalesPaginationQuery, VoidSaleInput } from './sales.schema';
-import { registerService } from '../register/register.service';
 
 import { NotFoundError, BadRequestError } from '../../shared/errors';
 
@@ -54,6 +53,12 @@ export async function getAllSalesHandler(
   }
   if (queryParams.status) {
     filters.status = queryParams.status;
+  }
+  if (queryParams.from) {
+    filters.from = queryParams.from;
+  }
+  if (queryParams.to) {
+    filters.to = queryParams.to;
   }
 
   const pagination = {

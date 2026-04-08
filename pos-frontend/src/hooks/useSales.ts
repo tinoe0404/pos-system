@@ -28,8 +28,15 @@ export const useSales = () => {
     return useQuery({
         queryKey: ['sales'],
         queryFn: async () => {
-            // Use /sales/today endpoint for better performance
-            const { data } = await api.get<any>('/api/sales/today');
+            // Fetch last 2 weeks of transactions
+            const twoWeeksAgo = new Date();
+            twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+            const from = twoWeeksAgo.toISOString();
+            const to = new Date().toISOString();
+
+            const { data } = await api.get<any>('/api/sales', {
+                params: { from, to, take: 500 },
+            });
             // Transform snake_case API response to camelCase interface
             const transformedSales: Sale[] = data.sales.map((sale: any) => ({
                 id: sale.id,

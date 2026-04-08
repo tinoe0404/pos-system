@@ -1,7 +1,6 @@
 import { Prisma, SaleStatus } from '@prisma/client';
 import prisma from '../../shared/prisma';
 import { CreateRefundInput } from './refund.schema';
-import { registerService } from '../register/register.service'; // To log cash out
 
 
 export const refundService = {
@@ -66,12 +65,7 @@ export const refundService = {
             return refund;
         });
 
-        // 4. Update Cash Register
-        try {
-            await registerService.cashOut(userId, Number(totalRefundAmount), `Refund for sale #${sale.id.slice(-6)}`);
-        } catch (e) {
-            console.warn("Failed to update register log for refund:", e);
-        }
+        // 4. Cash drawer updates handled manually.
 
         return result;
     }
